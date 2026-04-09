@@ -1398,6 +1398,17 @@ select option { background: var(--color-dark-700); }
 }
 .auth-security-item i { flex-shrink: 0; stroke: var(--color-gold); width: 14px; height: 14px; }
 
+/* === HERO SEARCH BAR (Blog) === */
+.hero-search-bar {
+  display: flex;
+  gap: 8px;
+  max-width: 480px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.hero-search-bar input { flex: 1; min-width: 0; }
+.hero-search-bar .btn-primary { white-space: nowrap; flex-shrink: 0; }
+
 /* === RESPONSE GUARANTEE === */
 .response-guarantee {
   background: var(--color-dark-800);
