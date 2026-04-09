@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>My Dashboard | Proximity</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23B8924A'/><text x='50' y='72' font-family='Arial' font-size='65' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <button class="sidebar-toggle" aria-label="Open sidebar"><i data-lucide="menu"></i></button>
+
+    <aside class="sidebar">
+      <div class="sidebar-logo">PROXIMITY</div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-item active" data-tab="overview">
+          <i data-lucide="grid"></i> Overview
+        </button>
+        <button class="sidebar-nav-item" data-tab="disputes">
+          <i data-lucide="list"></i> My Disputes
+        </button>
+        <button class="sidebar-nav-item" data-tab="submit">
+          <i data-lucide="plus-circle"></i> Submit Dispute
+        </button>
+        <button class="sidebar-nav-item" data-tab="profile">
+          <i data-lucide="user"></i> Profile
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="logout-btn" onclick="window.logout()">
+          <i data-lucide="log-out"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="main-content">
+      <div class="top-bar">
+        <p class="user-greeting">Welcome back</p>
+        <div class="avatar-badge">--</div>
+      </div>
+
+      <div id="tab-overview" class="tab-panel active">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-card-icon"><i data-lucide="file-text" class="icon-gold"></i></div>
+            <div>
+              <div class="stat-card-number" id="stat-open">--</div>
+              <div class="stat-card-label">Open Disputes</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon"><i data-lucide="check-circle" class="icon-gold"></i></div>
+            <div>
+              <div class="stat-card-number" id="stat-resolved">--</div>
+              <div class="stat-card-label">Resolved</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon"><i data-lucide="calendar" class="icon-gold"></i></div>
+            <div>
+              <div class="stat-card-number" id="stat-days">--</div>
+              <div class="stat-card-label">Days Active</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Dispute Activity</h3>
+          <canvas id="dispute-chart" height="250"></canvas>
+        </div>
+
+        <div class="progress-card">
+          <h3>Estimated Credit Improvement</h3>
+          <p>Track your progress as disputes resolve and your credit profile strengthens.</p>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill"></div>
+          </div>
+          <p style="margin-top:8px;font-size:0.85rem;color:var(--color-gold)">35% improvement tracked</p>
+        </div>
+      </div>
+
+      <div id="tab-disputes" class="tab-panel">
+        <h2 class="tab-heading">My Disputes</h2>
+        <div style="overflow-x:auto">
+          <table class="disputes-table">
+            <thead>
+              <tr>
+                <th>Bureau</th>
+                <th>Account Name</th>
+                <th>Status</th>
+                <th>Date Filed</th>
+              </tr>
+            </thead>
+            <tbody id="disputes-table-body">
+              <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-submit" class="tab-panel">
+        <h2 class="tab-heading">Submit a Dispute</h2>
+        <form class="dispute-form" id="dispute-form">
+          <div class="form-group">
+            <label class="form-label" for="bureau">Credit Bureau *</label>
+            <select id="bureau" name="bureau">
+              <option value="">Select a bureau...</option>
+              <option value="Equifax">Equifax</option>
+              <option value="Experian">Experian</option>
+              <option value="TransUnion">TransUnion</option>
+            </select>
+            <span class="form-error" id="bureau-error"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="accountName">Account Name *</label>
+            <input type="text" id="accountName" name="accountName" placeholder="e.g. Chase Bank, Capital One">
+            <span class="form-error" id="accountName-error"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="accountNumber">Account Number</label>
+            <input type="text" id="accountNumber" name="accountNumber" placeholder="Optional">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reason">Reason for Dispute *</label>
+            <textarea id="reason" name="reason" rows="4" placeholder="Describe why this item is inaccurate or should be disputed (minimum 10 characters)..."></textarea>
+            <span class="form-error" id="reason-error"></span>
+          </div>
+          <button type="submit" class="btn-primary" style="width:100%">Submit Dispute</button>
+        </form>
+      </div>
+
+      <div id="tab-profile" class="tab-panel">
+        <h2 class="tab-heading">My Profile</h2>
+        <form class="profile-form" id="profile-form">
+          <div class="form-group">
+            <label class="form-label" for="profile-name">Full Name</label>
+            <input type="text" id="profile-name" name="name">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profile-email">Email Address</label>
+            <input type="email" id="profile-email" name="email" readonly style="opacity:0.6;cursor:not-allowed">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profile-phone">Phone Number</label>
+            <input type="tel" id="profile-phone" name="phone" placeholder="(Optional)">
+          </div>
+          <button type="submit" class="btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/dashboard.js" defer></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if(typeof lucide !== 'undefined') lucide.createIcons(); });</script>
+</body>
+</html>

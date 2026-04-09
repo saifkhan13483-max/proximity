@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Register | Proximity</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23B8924A'/><text x='50' y='72' font-family='Arial' font-size='65' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <a href="index.html" class="auth-logo">PROXIMITY</a>
+      <h2 class="auth-heading">Create Your Account</h2>
+      <p class="auth-subheading">Start your credit repair journey today</p>
+
+      <form class="auth-form" id="register-form" novalidate>
+        <div class="float-label-group">
+          <input type="text" id="name" name="name" placeholder=" " autocomplete="name">
+          <label for="name">Full Name</label>
+        </div>
+        <div class="float-label-group">
+          <input type="email" id="email" name="email" placeholder=" " autocomplete="email">
+          <label for="email">Email Address</label>
+        </div>
+        <div class="float-label-group">
+          <div class="password-field-wrap">
+            <input type="password" id="password" name="password" placeholder=" " autocomplete="new-password">
+            <button type="button" class="password-toggle" aria-label="Show password">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+          <label for="password">Password</label>
+          <div class="strength-bar"><div class="strength-fill"></div></div>
+        </div>
+        <div class="float-label-group">
+          <div class="password-field-wrap">
+            <input type="password" id="confirm-password" name="confirm-password" placeholder=" " autocomplete="new-password">
+            <button type="button" class="password-toggle" aria-label="Show password">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+          <label for="confirm-password">Confirm Password</label>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%">Create Account</button>
+      </form>
+
+      <p class="auth-divider">Already have an account? <a href="login.html" class="auth-link">Sign in</a></p>
+    </div>
+  </div>
+
+  <script src="js/main.js" defer></script>
+  <script src="js/auth.js" defer></script>
+</body>
+</html>

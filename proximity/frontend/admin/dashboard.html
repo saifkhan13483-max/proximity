@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Admin Panel | Proximity</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23B8924A'/><text x='50' y='72' font-family='Arial' font-size='65' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <button class="sidebar-toggle" aria-label="Open sidebar"><i data-lucide="menu"></i></button>
+
+    <aside class="sidebar">
+      <div class="sidebar-logo">PROXIMITY <span style="font-size:0.6rem;color:var(--color-text-muted);display:block;font-weight:400;letter-spacing:0.1em">ADMIN</span></div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-item active" data-tab="overview">
+          <i data-lucide="bar-chart-2"></i> Overview
+        </button>
+        <button class="sidebar-nav-item" data-tab="users">
+          <i data-lucide="users"></i> Users
+        </button>
+        <button class="sidebar-nav-item" data-tab="disputes">
+          <i data-lucide="file-text"></i> Disputes
+        </button>
+        <button class="sidebar-nav-item" data-tab="messages">
+          <i data-lucide="mail"></i> Messages
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="logout-btn" onclick="window.logout()">
+          <i data-lucide="log-out"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="main-content">
+      <div class="top-bar">
+        <p class="user-greeting" style="font-size:1.1rem">Admin Dashboard</p>
+        <div class="avatar-badge" style="background:var(--color-gold)">A</div>
+      </div>
+
+      <div id="tab-overview" class="tab-panel active">
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-card-icon"><i data-lucide="users" class="icon-gold"></i></div>
+            <div>
+              <div class="kpi-number" id="kpi-users">--</div>
+              <div class="kpi-label">Total Users</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-icon"><i data-lucide="file-text" class="icon-gold"></i></div>
+            <div>
+              <div class="kpi-number" id="kpi-total-disputes">--</div>
+              <div class="kpi-label">Total Disputes</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-icon"><i data-lucide="alert-circle" class="icon-gold"></i></div>
+            <div>
+              <div class="kpi-number" id="kpi-open">--</div>
+              <div class="kpi-label">Open Disputes</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-icon"><i data-lucide="mail" class="icon-gold"></i></div>
+            <div>
+              <div class="kpi-number" id="kpi-unread">--</div>
+              <div class="kpi-label">Unread Messages</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Disputes by Bureau</h3>
+          <canvas id="admin-chart" height="200"></canvas>
+        </div>
+      </div>
+
+      <div id="tab-users" class="tab-panel">
+        <h2 class="tab-heading">All Users</h2>
+        <div class="search-bar">
+          <input type="text" id="user-search" placeholder="Search by name or email...">
+        </div>
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Joined</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-disputes" class="tab-panel">
+        <h2 class="tab-heading">All Disputes</h2>
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Bureau</th>
+                <th>Account</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="disputes-table-body">
+              <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-messages" class="tab-panel">
+        <h2 class="tab-heading">Contact Messages</h2>
+        <div id="messages-list">
+          <div style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/admin.js" defer></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if(typeof lucide !== 'undefined') lucide.createIcons(); });</script>
+</body>
+</html>
