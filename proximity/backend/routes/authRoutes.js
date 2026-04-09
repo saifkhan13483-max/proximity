@@ -28,11 +28,10 @@ router.post('/register', authLimiter, [
 
   try {
     const { name, email, password } = req.body;
-    const existing = await User.findOne({ email });
+    const existing = await User.findByEmail(email);
     if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
 
-    const user = new User({ name, email, password });
-    await user.save();
+    const user = await User.create({ name, email, password });
 
     sendWelcomeEmail(user).catch(err => console.error('[Email] Welcome email failed:', err.message));
 
@@ -42,6 +41,9 @@ router.post('/register', authLimiter, [
       user: { _id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt }
     });
   } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ success: false, message: 'Email already registered' });
+    }
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -55,10 +57,10 @@ router.post('/login', authLimiter, [
 
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findByEmail(email, true);
     if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await User.comparePassword(password, user.password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
     res.json({
@@ -83,12 +85,7 @@ router.put('/me', protect, [
 
   try {
     const { name, phone } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { name, phone },
-      { new: true, runValidators: true }
-    ).select('-password');
-
+    const updatedUser = await User.updateById(req.user._id, { name, phone });
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

@@ -8,10 +8,10 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-JWT_SECRET = "proximity_super_secret_jwt_key_2025_change_in_production"
-NODE_ENV = "development"
+NODE_ENV = "production"
 PORT = "5000"
 ALLOWED_ORIGIN = "*"
+JWT_SECRET = "18c7ac7a8091b05ce936ebd760a263081901076ed0170508be0d54d516c0a9665b9b2066e0a5081ae92c093ddf6fc0f46cc67c452160196b158e4513be9a4f9f"
 
 [workflows]
 runButton = "Project"

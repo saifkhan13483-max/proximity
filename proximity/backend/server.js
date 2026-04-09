@@ -1,16 +1,15 @@
 require('dotenv').config({ path: require('path').join(__dirname, 'config.env') });
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const rateLimit = require('express-rate-limit');
 
+const { initTables } = require('./db');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -18,6 +17,8 @@ const disputeRoutes = require('./routes/disputeRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
+
+app.set('trust proxy', 1);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -39,15 +40,14 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
-app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 
 app.use(express.json({ limit: '10kb' }));
 
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.ALLOWED_ORIGIN].filter(Boolean)
-  : ['http://localhost:5000', 'http://localhost:3000', '*'];
+const allowedOrigins = process.env.ALLOWED_ORIGIN
+  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
+  : ['*'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -75,7 +75,7 @@ app.use('/api/disputes', disputeRoutes);
 app.use('/api/contact', contactRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'ok', timestamp: Date.now(), db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
+  res.json({ success: true, status: 'ok', timestamp: Date.now(), db: 'postgresql' });
 });
 
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -89,23 +89,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const startServer = () => {
-  const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Proximity server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
-  });
-  return server;
-};
-
-let server;
-
 const gracefulShutdown = (signal) => {
   console.log(`${signal} received. Shutting down gracefully...`);
   if (server) {
     server.close(() => {
-      mongoose.connection.close(false, () => {
-        console.log('MongoDB connection closed. Process terminated.');
-        process.exit(0);
-      });
+      console.log('HTTP server closed. Process terminated.');
+      process.exit(0);
     });
   } else {
     process.exit(0);
@@ -115,22 +104,15 @@ const gracefulShutdown = (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-mongoose.set('strictQuery', true);
+let server;
 
-if (process.env.MONGO_URI) {
-  mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
-  })
-    .then(() => {
-      console.log('MongoDB Connected');
-      server = startServer();
-    })
-    .catch(err => {
-      console.error('MongoDB connection error:', err.message);
-      console.warn('Starting without DB — set MONGO_URI for full functionality.');
-      server = startServer();
+initTables()
+  .then(() => {
+    server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Proximity server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
     });
-} else {
-  console.warn('MONGO_URI not set — starting without database. Set MONGO_URI to enable all features.');
-  server = startServer();
-}
+  })
+  .catch(err => {
+    console.error('[DB] Failed to initialise database tables:', err.message);
+    process.exit(1);
+  });
