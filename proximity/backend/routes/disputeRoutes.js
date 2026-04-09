@@ -8,11 +8,9 @@ const { sendDisputeStatusEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 router.get('/', protect, async (req, res) => {
   try {
-    const disputes = await Dispute.findByUserId(req.user._id);
+    const disputes = await Dispute.find({ userId: req.user._id }).sort({ createdAt: -1 });
     res.json({ success: true, count: disputes.length, disputes });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -21,7 +19,7 @@ router.get('/', protect, async (req, res) => {
 
 router.get('/all', protect, adminOnly, async (req, res) => {
   try {
-    const disputes = await Dispute.findAll();
+    const disputes = await Dispute.find().populate('userId', 'name email').sort({ createdAt: -1 });
     res.json({ success: true, count: disputes.length, disputes });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -38,7 +36,8 @@ router.post('/', protect, [
 
   try {
     const { bureau, accountName, accountNumber, reason } = req.body;
-    const dispute = await Dispute.create({ userId: req.user._id, bureau, accountName, accountNumber, reason });
+    const dispute = new Dispute({ userId: req.user._id, bureau, accountName, accountNumber, reason });
+    await dispute.save();
     res.status(201).json({ success: true, dispute });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -46,15 +45,16 @@ router.post('/', protect, [
 });
 
 router.put('/:id', protect, adminOnly, async (req, res) => {
-  if (!uuidRegex.test(req.params.id)) {
-    return res.status(400).json({ success: false, message: 'Invalid dispute ID' });
-  }
   try {
     const { status, notes } = req.body;
-    const dispute = await Dispute.updateById(req.params.id, { status, notes });
+    const dispute = await Dispute.findByIdAndUpdate(
+      req.params.id,
+      { status, notes, updatedAt: Date.now() },
+      { new: true }
+    );
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const disputeOwner = await User.findById(dispute.userId);
+    const disputeOwner = await User.findById(dispute.userId).select('name email');
     if (disputeOwner) {
       sendDisputeStatusEmail(disputeOwner, dispute).catch(err =>
         console.error('[Email] Dispute status email failed:', err.message)
@@ -68,12 +68,9 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
 });
 
 router.delete('/:id', protect, adminOnly, async (req, res) => {
-  if (!uuidRegex.test(req.params.id)) {
-    return res.status(400).json({ success: false, message: 'Invalid dispute ID' });
-  }
   try {
-    const deleted = await Dispute.deleteById(req.params.id);
-    if (!deleted) return res.status(404).json({ success: false, message: 'Dispute not found' });
+    const dispute = await Dispute.findByIdAndDelete(req.params.id);
+    if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     res.json({ success: true, message: 'Dispute deleted' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

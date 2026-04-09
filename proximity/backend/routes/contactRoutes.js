@@ -7,8 +7,6 @@ const { sendAdminContactAlert } = require('../utils/emailService');
 
 const router = express.Router();
 
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 router.post('/', [
   check('name', 'Name is required').notEmpty(),
   check('email', 'Please include a valid email').isEmail(),
@@ -19,7 +17,8 @@ router.post('/', [
 
   try {
     const { name, email, phone, message } = req.body;
-    await ContactMessage.create({ name, email, phone, message });
+    const msg = new ContactMessage({ name, email, phone, message });
+    await msg.save();
 
     sendAdminContactAlert({ name, email, phone, message }).catch(err =>
       console.error('[Email] Admin contact alert failed:', err.message)
@@ -33,7 +32,7 @@ router.post('/', [
 
 router.get('/', protect, adminOnly, async (req, res) => {
   try {
-    const messages = await ContactMessage.findAll();
+    const messages = await ContactMessage.find().sort({ read: 1, createdAt: -1 });
     res.json({ success: true, count: messages.length, messages });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -41,11 +40,8 @@ router.get('/', protect, adminOnly, async (req, res) => {
 });
 
 router.put('/:id/read', protect, adminOnly, async (req, res) => {
-  if (!uuidRegex.test(req.params.id)) {
-    return res.status(400).json({ success: false, message: 'Invalid message ID' });
-  }
   try {
-    const msg = await ContactMessage.markRead(req.params.id);
+    const msg = await ContactMessage.findByIdAndUpdate(req.params.id, { read: true }, { new: true });
     if (!msg) return res.status(404).json({ success: false, message: 'Message not found' });
     res.json({ success: true, message: msg });
   } catch (err) {

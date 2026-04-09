@@ -6,7 +6,7 @@ A premium credit repair platform with a luxury fintech aesthetic (dark theme wit
 
 - **Backend**: Node.js + Express (in `proximity/backend/`)
 - **Frontend**: Vanilla HTML/CSS/JS (in `proximity/frontend/`)
-- **Database**: Replit PostgreSQL (via `pg` pool in `proximity/backend/db.js`)
+- **Database**: MongoDB via Mongoose
 - **Auth**: JWT-based with role separation (`client` vs `admin`)
 
 ## Project Structure
@@ -14,9 +14,8 @@ A premium credit repair platform with a luxury fintech aesthetic (dark theme wit
 ```
 proximity/
   backend/
-    server.js          # Express entry point
-    db.js              # PostgreSQL pool + table initialisation
-    models/            # DB query functions (User, Dispute, ContactMessage)
+    server.js          # Express entry point + MongoDB connection
+    models/            # Mongoose schemas (User, Dispute, ContactMessage)
     routes/            # API routes (auth, users, disputes, contact)
     middleware/        # Auth + error middleware
     utils/             # Email service (nodemailer)
@@ -33,38 +32,38 @@ proximity/
 
 ## Running the App
 
-The server runs from the `proximity/backend/` directory. The workflow `Start Proximity` handles this via:
+The workflow `Start Proximity` starts the server via:
 ```
 node proximity/backend/server.js
 ```
 
-It initialises PostgreSQL tables on startup, serves the frontend statically, and provides a REST API under `/api/`.
+The server connects to MongoDB, serves the frontend statically, and provides a REST API under `/api/`.
 
 ## Seeding the Admin User
 
-Run once to create the initial admin account:
+Run once after MongoDB is connected:
 ```
 cd proximity/backend && node seedAdmin.js
 ```
 
 Default credentials: `admin@proximity.com` / `Admin@12345` — **change this immediately after first login**.
 
-## Environment Variables
+## Required Environment Variables
 
-Configured in Replit's Secrets/Environment tab:
-- `DATABASE_URL` — PostgreSQL connection string (auto-set by Replit DB)
-- `JWT_SECRET` — Cryptographically strong random secret for JWTs (set)
-- `NODE_ENV` — Set to `production`
+- `MONGO_URI` — MongoDB Atlas connection string (required for full functionality)
+- `JWT_SECRET` — Secret for signing JWTs (set to a strong random value)
+- `NODE_ENV` — `development` or `production`
 - `PORT` — Default 5000
-- `ALLOWED_ORIGIN` — CORS allowed origins (comma-separated or `*`)
+- `ALLOWED_ORIGIN` — CORS allowed origins (comma-separated, or `*`)
 
-### Optional Email Variables (for transactional emails)
+## Optional Email Variables
+
 - `EMAIL_HOST` — SMTP host
 - `EMAIL_PORT` — SMTP port (default 587)
 - `EMAIL_USER` — SMTP username
 - `EMAIL_PASS` — SMTP password
-- `EMAIL_FROM` — Sender address
-- `ADMIN_EMAIL` — Where admin contact notifications go
+- `EMAIL_FROM` — Sender display address
+- `ADMIN_EMAIL` — Where contact form alerts go
 - `APP_URL` — Public URL used in email links
 
 ## Key Features
@@ -73,5 +72,4 @@ Configured in Replit's Secrets/Environment tab:
 - JWT auth with client/admin roles
 - Admin panel for user and dispute management
 - Contact form with email notifications (requires `EMAIL_*` env vars)
-- Security: helmet, cors, rate limiting, xss-clean, hpp, compression
-- PostgreSQL database with UUID primary keys, foreign key constraints
+- Security: helmet, cors, rate limiting, xss-clean, hpp, mongo-sanitize, compression

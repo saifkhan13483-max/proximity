@@ -1,68 +1,24 @@
-const { pool } = require('../db');
+const mongoose = require('mongoose');
 
-const toDispute = (row) => {
-  if (!row) return null;
-  return {
-    _id: row.id,
-    id: row.id,
-    userId: row.user_id,
-    bureau: row.bureau,
-    accountName: row.account_name,
-    accountNumber: row.account_number,
-    reason: row.reason,
-    status: row.status,
-    notes: row.notes,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    user: row.user_name ? { name: row.user_name, email: row.user_email } : undefined,
-  };
-};
+const disputeSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  bureau: { type: String, enum: ['Equifax', 'Experian', 'TransUnion'], required: true },
+  accountName: { type: String, required: true, trim: true },
+  accountNumber: { type: String, trim: true },
+  reason: { type: String, required: true, minlength: 10, maxlength: 1000 },
+  status: { type: String, enum: ['Pending', 'In Progress', 'Resolved'], default: 'Pending' },
+  notes: { type: String, maxlength: 2000 },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
 
-const Dispute = {
-  async create({ userId, bureau, accountName, accountNumber, reason }) {
-    const { rows } = await pool.query(
-      `INSERT INTO disputes (user_id, bureau, account_name, account_number, reason)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [userId, bureau, accountName.trim(), accountNumber ? accountNumber.trim() : null, reason]
-    );
-    return toDispute(rows[0]);
-  },
+disputeSchema.index({ userId: 1, createdAt: -1 });
+disputeSchema.index({ status: 1 });
+disputeSchema.index({ bureau: 1 });
 
-  async findByUserId(userId) {
-    const { rows } = await pool.query(
-      `SELECT * FROM disputes WHERE user_id = $1 ORDER BY created_at DESC`,
-      [userId]
-    );
-    return rows.map(toDispute);
-  },
+disputeSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
 
-  async findAll() {
-    const { rows } = await pool.query(
-      `SELECT d.*, u.name AS user_name, u.email AS user_email
-       FROM disputes d
-       LEFT JOIN users u ON d.user_id = u.id
-       ORDER BY d.created_at DESC`
-    );
-    return rows.map(toDispute);
-  },
-
-  async findById(id) {
-    const { rows } = await pool.query(`SELECT * FROM disputes WHERE id = $1`, [id]);
-    return toDispute(rows[0]);
-  },
-
-  async updateById(id, { status, notes }) {
-    const { rows } = await pool.query(
-      `UPDATE disputes SET status = $1, notes = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
-      [status, notes || null, id]
-    );
-    return toDispute(rows[0]);
-  },
-
-  async deleteById(id) {
-    const { rows } = await pool.query(`DELETE FROM disputes WHERE id = $1 RETURNING id`, [id]);
-    return rows[0] ? true : false;
-  },
-};
-
-module.exports = Dispute;
+module.exports = mongoose.model('Dispute', disputeSchema);
