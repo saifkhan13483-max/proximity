@@ -1,0 +1,141 @@
+You are an elite AI expert system operating as a Principal Software Architect (10+ years), Advanced SEO Strategist (7+ years), and Content Research Lead (5+ years). Think and execute at the highest professional level.
+
+Core Execution Standards:
+
+Engineering: Architect scalable, secure, production-ready systems. Write clean, maintainable code across frontend, backend, APIs, databases, and authentication. Debug, optimize, and deploy using Replit AI Coding Agent with senior-level expertise.
+
+SEO & Content: Create research-driven, high-converting content optimized for visibility, ranking, and measurable business impact using advanced SEO strategies.
+
+Strategic Delivery: Provide accurate, well-researched solutions focused on real-world implementation. Ground all recommendations in deep research and strategic thinking.
+
+Non-Negotiable Priorities:
+
+Accuracy > Speed∣Quality > Quantity∣Strategy > Generic Output
+Every response must be precise, actionable, and immediately implementable at enterprise level.  "Build a full-stack credit repair website for a company called Proximity. The brand colors are white (#FFFFFF) and gold (#B8924A). Use a professional, modern, and trustworthy design aesthetic throughout.
+
+FOLDER STRUCTURE:
+
+proximity/
+├── backend/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── config.env
+│   ├── package.json
+│   ├── package-lock.json
+│   └── server.js
+└── frontend/
+    ├── admin/
+    ├── client/
+    ├── css/
+    ├── js/
+    ├── index.html
+    ├── about.html
+    ├── services.html
+    ├── pricing.html
+    ├── blog.html
+    ├── blog-single.html
+    ├── contact.html
+    ├── login.html
+    └── register.html
+
+BACKEND (Node.js + Express):
+
+Entry point: server.js — sets up Express, connects to MongoDB via Mongoose, loads environment variables from config.env, and serves the API on port 5000
+config.env — stores MONGO_URI, JWT_SECRET, PORT
+models/ — Mongoose schemas for: User (name, email, password, role, createdAt), Dispute (userId, bureau, accountName, reason, status, createdAt), ContactMessage (name, email, message, createdAt)
+routes/ — REST API routes:
+authRoutes.js — POST /api/auth/register, POST /api/auth/login (JWT-based)
+disputeRoutes.js — CRUD for disputes (protected routes)
+contactRoutes.js — POST /api/contact
+middleware/ — authMiddleware.js for JWT verification and role-based protection
+FRONTEND (Vanilla HTML, CSS, JavaScript — no frameworks):
+
+css/ — style.css (global styles, variables for white and #B8924A), responsive.css
+js/ — main.js (navbar, animations, general UI), auth.js (login/register logic), dashboard.js (client portal), admin.js (admin panel logic)
+admin/ — dashboard.html (admin panel to manage users, disputes, messages)
+client/ — dashboard.html (client portal to submit and track disputes)
+PAGES — Content & Sections:
+
+index.html (Home)
+
+Sticky navbar with logo "Proximity" and links: Home, About, Services, Pricing, Blog, Contact, Login/Register
+Hero section: bold headline "Repair Your Credit. Rebuild Your Future." with subtext and two CTA buttons (Get Started, Learn More) — white text on a dark/gold gradient background
+Stats bar: e.g., 10,000+ clients helped, 98% satisfaction, $2M+ in debt removed
+How It Works: 3-step process (Dispute → Monitor → Rebuild) with icons
+Services overview cards (pull from services page)
+Testimonials carousel with star ratings
+CTA banner with gold background
+Footer with links, social icons, copyright
+about.html
+
+Hero with company mission statement
+Company story and founding values
+Team section with placeholder profile cards
+Why Choose Proximity section with icon + text grid
+services.html
+
+Hero
+Service cards: Credit Dispute Filing, Credit Monitoring, Debt Validation, Score Optimization, Identity Theft Protection, Financial Coaching
+Each card has an icon, title, short description, and a "Learn More" button
+pricing.html
+
+Hero
+3 pricing tiers: Basic, Standard, Premium — with feature lists, prices, and a "Get Started" CTA
+FAQ accordion section
+blog.html
+
+Hero
+Grid of blog post cards (title, excerpt, date, category, "Read More" link)
+Sidebar with recent posts, categories, search bar
+blog-single.html
+
+Full article layout with title, author, date, featured image, body content
+Related posts section
+Comment section
+contact.html
+
+Hero
+Contact form: Name, Email, Phone, Message, Submit
+Contact info: address, phone, email
+Embedded Google Maps placeholder
+login.html
+
+Centered card with email + password fields, login button, link to register
+JWT token stored in localStorage on success, redirect to client dashboard
+register.html
+
+Centered card with full name, email, password, confirm password, register button
+On success, redirect to login
+client/dashboard.html
+
+Protected (redirect to login if not authenticated)
+Sidebar navigation: Overview, My Disputes, Submit Dispute, Profile
+Overview: stats cards (open disputes, resolved, credit score estimate)
+Submit Dispute form: bureau (Equifax/Experian/TransUnion), account name, reason
+Dispute table with status badges (Pending, In Progress, Resolved)
+admin/dashboard.html
+
+Protected (admin role only)
+Sidebar: Users, Disputes, Messages, Settings
+Tables to view/manage all users, disputes, and contact messages
+Ability to update dispute status
+DESIGN SYSTEM:
+
+Primary color: #B8924A (gold) — used for buttons, accents, highlights, borders
+Secondary color: #FFFFFF (white) — backgrounds, cards, text on dark
+Dark backgrounds: #1a1a1a or #0d0d0d for hero sections and navbar
+Font: Google Fonts — "Poppins" for headings, "Inter" for body
+Button styles: solid gold with white text (primary), outlined gold (secondary)
+Smooth hover transitions on all interactive elements
+Fully responsive — mobile-first design with hamburger menu on mobile
+Use CSS custom properties (variables) for all colors and fonts
+ADDITIONAL REQUIREMENTS:
+
+All API calls from frontend use fetch() with Bearer token headers
+Forms validate on the client side before submission
+Display success/error toast notifications for form submissions
+Smooth scroll behavior and subtle fade-in animations on scroll (use Intersection Observer)
+Favicon and page titles set appropriately for each page
+No external CSS frameworks (no Bootstrap/Tailwind) — pure custom CSS only"
+Please give me the best and most powerful PRD to make this project using replit ai coding agent, but the PRD will be not very long and very short but will most powerful
