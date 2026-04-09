@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /client/
+Disallow: /admin/
+Disallow: /login.html
+Disallow: /register.html
+Disallow: /404.html
+Disallow: /privacy.html
+Disallow: /terms.html
+
+Sitemap: https://proximity.replit.app/sitemap.xml

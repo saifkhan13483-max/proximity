@@ -12,6 +12,10 @@ const disputeSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+disputeSchema.index({ userId: 1, createdAt: -1 });
+disputeSchema.index({ status: 1 });
+disputeSchema.index({ bureau: 1 });
+
 disputeSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();

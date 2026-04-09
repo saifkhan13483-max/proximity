@@ -1,7 +1,38 @@
 # Proximity – Replit AI Coding Agent Prompt Workflow
-### Complete Step-by-Step Build Guide | Aligned with PRD v2.0 — Fixed & Production-Ready
+### Complete Step-by-Step Build Guide | Aligned with PRD v2.0 — Enterprise Production-Ready
 
 > **How to use this file:** Paste each prompt directly into the Replit AI Coding Agent in the exact order shown. Wait for each step to fully complete before moving to the next. Each prompt builds on all previous work. Never skip a step — every step has dependencies.
+
+---
+
+## Is This Fully Production-Ready?
+
+**Yes — if you complete all 18 phases.** Here is exactly what that means:
+
+| Requirement | Covered In |
+|---|---|
+| Secure password hashing (bcrypt 12 rounds) | Phase 2 |
+| JWT authentication with 30-day expiry | Phase 4 |
+| Rate limiting on all auth endpoints | Phase 4 |
+| Role-based access control (client / admin) | Phase 3 |
+| Server-side input validation (express-validator) | Phases 4–5 |
+| Centralized error handling | Phase 3 |
+| Security headers (XSS, CSRF, clickjacking) | **Phase 15** |
+| MongoDB injection protection | **Phase 15** |
+| HTTP response compression | **Phase 15** |
+| Request logging (production audit trail) | **Phase 15** |
+| Graceful server shutdown | **Phase 15** |
+| Custom 404 page | **Phase 16** |
+| Legal pages (Privacy Policy, Terms of Service) | **Phase 16** |
+| robots.txt + sitemap.xml | **Phase 16** |
+| Email notifications (disputes, welcome) | **Phase 17** |
+| Full SEO optimization | Phase 13 |
+| Accessibility (WCAG AA compliant) | Phase 13 |
+| Final 20-point go-live verification | Phase 14 |
+| MongoDB Atlas production database | Phase 14 |
+| Deployment on Replit with static serving | Phase 14 |
+
+> Skipping Phases 15–17 will produce a working app but NOT a fully hardened, enterprise-grade production system. Complete all 18 phases for a site you can confidently put real users on.
 
 ---
 
@@ -1814,7 +1845,540 @@ The project is production-ready when all 20 checks pass with ✓.
 
 ---
 
-## Quick Reference — Build Order Summary
+## Phase 15 — Security Hardening (Production Essential)
+
+### Step 15.1 — Install Security Middleware
+```
+Install the following additional backend packages:
+- helmet (security headers)
+- compression (gzip response compression)
+- morgan (HTTP request logging)
+- express-mongo-sanitize (MongoDB injection prevention)
+- xss-clean (XSS attack prevention)
+- hpp (HTTP parameter pollution prevention)
+
+Run: npm install helmet compression morgan express-mongo-sanitize xss-clean hpp
+```
+
+### Step 15.2 — Apply Security Middleware to server.js
+```
+Update proximity/backend/server.js to add all security middleware BEFORE the route definitions:
+
+1. Import all new packages at the top:
+   const helmet = require('helmet');
+   const compression = require('compression');
+   const morgan = require('morgan');
+   const mongoSanitize = require('express-mongo-sanitize');
+   const xss = require('xss-clean');
+   const hpp = require('hpp');
+
+2. Apply middleware in this EXACT order (order matters):
+   // Security headers — must be first
+   app.use(helmet({
+     contentSecurityPolicy: {
+       directives: {
+         defaultSrc: ["'self'"],
+         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+         fontSrc: ["'self'", "https://fonts.gstatic.com"],
+         scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
+         imgSrc: ["'self'", "data:", "https:"],
+       }
+     }
+   }));
+
+   // Compression for all responses
+   app.use(compression());
+
+   // HTTP request logging (only in development)
+   if (process.env.NODE_ENV === 'development') {
+     app.use(morgan('dev'));
+   } else {
+     app.use(morgan('combined')); // More detailed logging in production
+   }
+
+   // Prevent MongoDB operator injection ($where, $gt, etc.)
+   app.use(mongoSanitize());
+
+   // Prevent XSS attacks by sanitizing req.body, req.query, req.params
+   app.use(xss());
+
+   // Prevent HTTP parameter pollution
+   app.use(hpp());
+
+   // Body parser (keep existing)
+   app.use(express.json({ limit: '10kb' })); // Limit payload size to 10KB
+   app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
+
+3. Apply a global rate limiter to ALL routes (not just auth):
+   const globalLimiter = require('express-rate-limit')({
+     windowMs: 15 * 60 * 1000,
+     max: 200,
+     message: { success: false, message: 'Too many requests from this IP' }
+   });
+   app.use('/api/', globalLimiter);
+
+4. Add graceful shutdown handling at the bottom of server.js:
+   process.on('SIGTERM', () => {
+     console.log('SIGTERM received. Shutting down gracefully...');
+     mongoose.connection.close(() => {
+       console.log('MongoDB connection closed.');
+       process.exit(0);
+     });
+   });
+   process.on('SIGINT', () => {
+     console.log('SIGINT received. Shutting down gracefully...');
+     mongoose.connection.close(() => {
+       console.log('MongoDB connection closed.');
+       process.exit(0);
+     });
+   });
+
+5. Add database connection retry logic to the startServer function:
+   mongoose.set('strictQuery', true); // before connect()
+   // Add connection options: { useNewUrlParser: true, useUnifiedTopology: true, serverSelectionTimeoutMS: 5000 }
+   // On connection error, retry after 5 seconds instead of crashing immediately
+
+Restart the server and verify it starts without errors. Confirm /api/health still returns { success: true }.
+```
+
+### Step 15.3 — Add Database Indexes
+```
+Update the Mongoose schemas to add explicit indexes for production query performance:
+
+In User.js, add to the schema definition:
+- email already has unique: true — confirm it also has an index (unique implies index in Mongoose)
+- Add: userSchema.index({ createdAt: -1 });
+
+In Dispute.js, add after the schema definition:
+- disputeSchema.index({ userId: 1, createdAt: -1 }); // Primary client query
+- disputeSchema.index({ status: 1 }); // Filter by status
+- disputeSchema.index({ bureau: 1 }); // Filter by bureau for admin chart
+
+In ContactMessage.js, add:
+- contactMessageSchema.index({ read: 1, createdAt: -1 }); // Admin messages view
+
+These indexes prevent full collection scans as data grows. They are created automatically when the server starts and models are loaded.
+```
+
+### Step 15.4 — Secure Headers & CORS for Production
+```
+Update the CORS configuration in server.js to be strict in production:
+
+Replace the current cors() call with:
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.ALLOWED_ORIGIN].filter(Boolean)
+  : ['http://localhost:5000', 'http://localhost:3000', '*'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+Update config.env:
+- ALLOWED_ORIGIN=https://your-replit-app-url.repl.co (replace with actual URL after deployment)
+
+Also add to config.env for completeness:
+- RATE_LIMIT_MAX=200
+- JWT_EXPIRES_IN=30d
+- BCRYPT_ROUNDS=12
+```
+
+---
+
+## Phase 16 — Missing Production Pages
+
+### Step 16.1 — Custom 404 Page
+```
+Create proximity/frontend/404.html — a fully branded error page.
+
+Requirements:
+- Same navbar and footer as other pages
+- CSS files linked at css/style.css etc.
+- Hero section: "404 — Page Not Found" as the heading
+- Large gold "404" display number (font-size: 8rem, Poppins 800)
+- Subtext: "The page you're looking for doesn't exist or has been moved."
+- Two buttons: "Go Home" (.btn-primary → index.html) and "Contact Support" (.btn-secondary → contact.html)
+- Same dark hero with gold glow aesthetic as other pages
+
+Then update proximity/backend/server.js:
+In the static file serving section, replace the catch-all route:
+
+// BEFORE the error handler middleware, add:
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return next(); // Let API errors fall through to errorHandler
+  res.status(404).sendFile(path.join(__dirname, '../frontend/404.html'));
+});
+
+This ensures any non-existent page gets the branded 404 instead of an Express error.
+```
+
+### Step 16.2 — Legal Pages (Privacy Policy & Terms of Service)
+```
+Create proximity/frontend/privacy.html and proximity/frontend/terms.html.
+
+Both pages must:
+- Have the same navbar and footer as all other pages
+- Use the full CSS/JS stack
+- Be noindexed: <meta name="robots" content="noindex">
+
+privacy.html content structure:
+- <title>Privacy Policy | Proximity Credit Repair</title>
+- Hero: "Privacy Policy" — dark hero, last updated date
+- Article body (max-width 720px, centered):
+  Section 1: Information We Collect (name, email, credit report data you provide)
+  Section 2: How We Use Your Information (to file disputes, communicate with you)
+  Section 3: How We Protect Your Data (encryption, bcrypt passwords, JWT tokens)
+  Section 4: Data Sharing (we never sell your data; share only with credit bureaus on your behalf)
+  Section 5: Your Rights (access, correction, deletion — contact us)
+  Section 6: Cookies (we use localStorage for authentication only)
+  Section 7: Contact (hello@proximity.com)
+- Use real legal-sounding content — not Lorem ipsum
+
+terms.html content structure:
+- <title>Terms of Service | Proximity Credit Repair</title>
+- Hero: "Terms of Service"
+- Article body sections:
+  Section 1: Acceptance of Terms
+  Section 2: Description of Services (credit dispute assistance, monitoring, coaching)
+  Section 3: User Accounts (you are responsible for your account security)
+  Section 4: Payment Terms (subscription billed monthly, cancel anytime)
+  Section 5: No Guarantee of Results (we cannot guarantee specific credit score increases)
+  Section 6: Prohibited Uses (no fraudulent disputes, no impersonation)
+  Section 7: Limitation of Liability
+  Section 8: Governing Law (State of New York)
+  Section 9: Changes to Terms
+  Section 10: Contact
+
+Add links to both pages in the footer of ALL pages (Privacy Policy | Terms of Service in the .footer-bottom copyright bar).
+```
+
+### Step 16.3 — robots.txt and sitemap.xml
+```
+Create proximity/frontend/robots.txt:
+
+User-agent: *
+Allow: /
+Disallow: /client/
+Disallow: /admin/
+Disallow: /login.html
+Disallow: /register.html
+
+Sitemap: https://your-domain.com/sitemap.xml
+
+---
+
+Create proximity/frontend/sitemap.xml:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://your-domain.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://your-domain.com/about.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://your-domain.com/services.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://your-domain.com/pricing.html</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://your-domain.com/blog.html</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://your-domain.com/contact.html</loc><priority>0.6</priority><changefreq>yearly</changefreq></url>
+</urlset>
+
+Replace "your-domain.com" with your actual Replit deployment URL.
+
+Update robots.txt Sitemap URL too.
+
+Note: Update this file whenever you add new blog posts or pages.
+```
+
+### Step 16.4 — Referral & Social Proof Enhancements
+```
+Add social proof and trust signals throughout the site:
+
+1. On index.html — add a "Trust Bar" between the hero and stats bar:
+   A row of recognizable logos/badges (placeholder boxes labeled):
+   "As Seen In: Forbes | Inc | Yahoo Finance | NerdWallet"
+   Style: grayscale filter, opacity 0.5, turns to normal on hover
+   Background: very dark strip (#0D0D0D)
+
+2. On pricing.html — add trust badges below the pricing cards:
+   - Shield icon + "Bank-Level 256-bit Encryption"
+   - Lock icon + "FCRA Compliant Dispute Process"
+   - Star icon + "500+ Verified Reviews"
+   - Badge icon + "BBB Accredited Business (Placeholder)"
+   Style these as a horizontal flex row with gold icons and small gray text
+
+3. On register.html — add below the form:
+   - "🔒 Your information is encrypted and never sold."
+   - "✓ No credit card required to start"
+   (Use small muted gray text — not emojis in production, use Lucide icons)
+
+4. On contact.html — add a "Response Guarantee" strip:
+   "We respond to all inquiries within 24 business hours — guaranteed."
+   Dark strip with Lucide clock icon in gold.
+```
+
+---
+
+## Phase 17 — Email Notification System
+
+### Step 17.1 — Install Nodemailer & Configure Email
+```
+Install nodemailer:
+npm install nodemailer
+
+Add to config.env:
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-gmail@gmail.com
+EMAIL_PASS=your-gmail-app-password
+EMAIL_FROM=Proximity Credit Repair <noreply@proximity.com>
+
+IMPORTANT: For Gmail, use an App Password (not your main password):
+1. Enable 2-Factor Authentication on your Google account
+2. Go to: Google Account → Security → App Passwords
+3. Generate a new app password for "Mail"
+4. Use that 16-character password as EMAIL_PASS
+
+For production, prefer a transactional email service over Gmail:
+- SendGrid (most reliable for volume) — use SENDGRID_API_KEY instead
+- Mailgun (developer-friendly)
+- Resend (modern, generous free tier)
+
+Create proximity/backend/utils/emailService.js:
+
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransporter({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: false,
+  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+});
+
+const sendEmail = async ({ to, subject, html }) => {
+  try {
+    await transporter.sendMail({ from: process.env.EMAIL_FROM, to, subject, html });
+    console.log(`Email sent to ${to}`);
+  } catch (err) {
+    console.error('Email send failed:', err.message);
+    // Don't throw — email failure should not crash the request
+  }
+};
+
+module.exports = { sendEmail };
+```
+
+### Step 17.2 — Welcome Email on Registration
+```
+Update proximity/backend/routes/authRoutes.js — POST /register:
+
+After successfully creating the user, add:
+
+const { sendEmail } = require('../utils/emailService');
+
+await sendEmail({
+  to: user.email,
+  subject: 'Welcome to Proximity Credit Repair',
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A0A0A; color: #ffffff; padding: 40px; border-radius: 16px;">
+      <h1 style="color: #B8924A; font-size: 2rem; margin-bottom: 8px;">PROXIMITY</h1>
+      <h2 style="color: #ffffff; margin-bottom: 16px;">Welcome, ${user.name}!</h2>
+      <p style="color: #9A9A9A; line-height: 1.7;">Your account has been created successfully. You can now log in and start disputing inaccurate items on your credit report.</p>
+      <a href="${process.env.APP_URL || 'http://localhost:5000'}/login.html"
+         style="display: inline-block; margin-top: 24px; background: #B8924A; color: #0A0A0A; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+        Go to Your Dashboard
+      </a>
+      <hr style="border-color: #222; margin: 32px 0;">
+      <p style="color: #555; font-size: 0.8rem;">If you didn't create this account, please ignore this email.</p>
+    </div>
+  `
+});
+
+Also add APP_URL to config.env:
+APP_URL=http://localhost:5000
+(Update to your Replit URL in production)
+```
+
+### Step 17.3 — Dispute Status Update Email
+```
+Update proximity/backend/routes/disputeRoutes.js — PUT /:id (admin update):
+
+After successfully updating the dispute, send a notification email to the client:
+
+const { sendEmail } = require('../utils/emailService');
+const User = require('../models/User');
+
+// Fetch the user who owns this dispute
+const disputeOwner = await User.findById(dispute.userId).select('name email');
+
+if (disputeOwner) {
+  const statusMessages = {
+    'Pending': 'Your dispute has been received and is queued for processing.',
+    'In Progress': 'Your dispute is actively being processed. We have sent letters to the relevant bureaus.',
+    'Resolved': 'Great news! Your dispute has been resolved. Please check your credit report for updates.'
+  };
+
+  await sendEmail({
+    to: disputeOwner.email,
+    subject: `Dispute Update: ${dispute.accountName} — ${dispute.status}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A0A0A; color: #ffffff; padding: 40px; border-radius: 16px;">
+        <h1 style="color: #B8924A; font-size: 1.8rem; margin-bottom: 8px;">PROXIMITY</h1>
+        <h2 style="color: #ffffff;">Dispute Status Update</h2>
+        <div style="background: #1A1A1A; border-left: 4px solid #B8924A; padding: 20px; border-radius: 8px; margin: 24px 0;">
+          <p><strong style="color: #B8924A;">Account:</strong> ${dispute.accountName}</p>
+          <p><strong style="color: #B8924A;">Bureau:</strong> ${dispute.bureau}</p>
+          <p><strong style="color: #B8924A;">New Status:</strong> ${dispute.status}</p>
+          ${dispute.notes ? `<p><strong style="color: #B8924A;">Notes:</strong> ${dispute.notes}</p>` : ''}
+        </div>
+        <p style="color: #9A9A9A; line-height: 1.7;">${statusMessages[dispute.status] || 'Your dispute status has been updated.'}</p>
+        <a href="${process.env.APP_URL || 'http://localhost:5000'}/client/dashboard.html"
+           style="display: inline-block; margin-top: 24px; background: #B8924A; color: #0A0A0A; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+          View Dashboard
+        </a>
+      </div>
+    `
+  });
+}
+```
+
+### Step 17.4 — Admin Notification for New Contact Message
+```
+Update proximity/backend/routes/contactRoutes.js — POST /:
+
+After saving the ContactMessage, notify the admin:
+
+const { sendEmail } = require('../utils/emailService');
+
+await sendEmail({
+  to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+  subject: `New Contact Form Submission from ${name}`,
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A0A0A; color: #ffffff; padding: 40px; border-radius: 16px;">
+      <h1 style="color: #B8924A;">New Contact Message</h1>
+      <div style="background: #1A1A1A; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p><strong style="color: #B8924A;">Name:</strong> ${name}</p>
+        <p><strong style="color: #B8924A;">Email:</strong> ${email}</p>
+        ${phone ? `<p><strong style="color: #B8924A;">Phone:</strong> ${phone}</p>` : ''}
+        <p style="margin-top: 16px;"><strong style="color: #B8924A;">Message:</strong><br>${message}</p>
+      </div>
+      <a href="${process.env.APP_URL || 'http://localhost:5000'}/admin/dashboard.html"
+         style="display: inline-block; margin-top: 16px; background: #B8924A; color: #0A0A0A; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+        View in Admin Panel
+      </a>
+    </div>
+  `
+});
+
+Add to config.env:
+ADMIN_EMAIL=admin@proximity.com
+```
+
+---
+
+## Phase 18 — Final Go-Live Checklist
+
+### Step 18.1 — Pre-Launch Security Audit
+```
+Run this final security audit before going live:
+
+BACKEND SECURITY:
+1. Confirm config.env is in .gitignore — run: git status and verify config.env does not appear
+2. Confirm JWT_SECRET is at least 32 random characters (not a dictionary word)
+3. Confirm bcrypt salt rounds are 12 (not 10 or lower)
+4. Confirm Helmet is active — open browser DevTools → Network → any API response → check for X-Content-Type-Options, X-Frame-Options, X-XSS-Protection headers
+5. Confirm rate limiting works — make 11 rapid requests to /api/auth/login — 11th should return 429
+6. Confirm MongoDB injection is blocked — send body: { "email": {"$gt": ""} } to /api/auth/login — should return 401, not find all users
+7. Confirm XSS is blocked — send body with: { "name": "<script>alert(1)</script>" } to register — should save sanitized version, not raw HTML
+8. Confirm CORS only allows your domain in production — change NODE_ENV to production temporarily and test from a different origin
+
+FRONTEND SECURITY:
+9. Confirm no API keys, secrets, or admin credentials are hardcoded in any frontend .js or .html file
+10. Confirm localStorage token key is consistent across all files (proximity_token)
+11. Confirm dashboard pages redirect to login when no token exists
+12. Confirm admin dashboard redirects clients (non-admin) away
+
+OPERATIONAL:
+13. Test the forgot-password flow (even if non-functional UI) — ensure it doesn't expose user existence (don't say "email not found")
+14. Confirm all forms have CSRF considerations noted (for future implementation with cookie-based sessions)
+15. Confirm error messages don't expose stack traces in production (NODE_ENV=production)
+```
+
+### Step 18.2 — Performance Final Check
+```
+Run a final performance check on the deployed site:
+
+1. Open Chrome DevTools → Lighthouse → run audit on your deployed URL for:
+   - Performance: target ≥ 90
+   - Accessibility: target ≥ 85
+   - Best Practices: target ≥ 90
+   - SEO: target ≥ 95
+
+2. Fix any Lighthouse-flagged issues:
+   - Missing alt attributes on images → add descriptive alt text
+   - Low contrast ratios → adjust text or background colors
+   - Missing form labels → ensure every input has a <label for="...">
+   - Render-blocking resources → confirm scripts use defer
+   - Large payloads → confirm Chart.js and Lucide load with defer
+
+3. Test page load speed using Google PageSpeed Insights (pagespeed.web.dev):
+   - Enter your live Replit URL
+   - Target: First Contentful Paint < 2.5s, Largest Contentful Paint < 4s
+   - If slow: verify compression middleware is active, fonts load with display=swap
+
+4. Verify MongoDB Atlas is in the correct region:
+   - Log into Atlas → Clusters → verify cluster region matches nearest to your users
+   - US East (us-east-1) for US clients
+
+5. Test API response times via browser Network tab:
+   - /api/health should respond in < 50ms
+   - /api/disputes should respond in < 200ms with a populated database
+   - If slow: check indexes are applied (Phase 15, Step 15.3)
+```
+
+### Step 18.3 — Final Domain & Launch Configuration
+```
+Configure the final production environment:
+
+1. Update ALL occurrences of placeholder URLs in config.env:
+   APP_URL=https://your-actual-replit-url.repl.co
+   ALLOWED_ORIGIN=https://your-actual-replit-url.repl.co
+   ADMIN_EMAIL=your-real-admin@email.com
+
+2. Update sitemap.xml and robots.txt with your actual domain (from Phase 16)
+
+3. Update Open Graph og:url and og:image on all pages with real URLs
+
+4. Run the admin seed script one final time on the production database:
+   node seedAdmin.js
+   Then IMMEDIATELY change the admin password by:
+   - Logging in as admin@proximity.com / Admin@123
+   - Going to the Profile tab → changing password via the API
+   - Deleting seedAdmin.js from the server
+
+5. Final smoke test after going live — run through this exact sequence:
+   a. Visit homepage — verify gold glow, animations, all sections visible
+   b. Register new user (use a real email you control)
+   c. Check welcome email arrived in inbox
+   d. Login → verify dashboard loads
+   e. Submit a dispute → verify it appears in table
+   f. Login as admin → verify new user and dispute appear
+   g. Update dispute status to "In Progress" → verify email notification received
+   h. Submit contact form → verify admin notification email received
+   i. Open all 13 pages → verify no console errors
+   j. Run Lighthouse one final time on all critical pages
+
+When all steps pass — your Proximity platform is fully production ready. 🎯
+```
+
+---
+
+## Quick Reference — Complete Build Order
 
 | Phase | Focus | Est. Time |
 |---|---|---|
@@ -1832,10 +2396,18 @@ The project is production-ready when all 20 checks pass with ✓.
 | 12 | Full testing + bug fix pass | 60 min |
 | 13 | SEO, performance, accessibility | 30 min |
 | 14 | Deployment + final 20-point verification | 20 min |
-| **Total** | | **~8.5 hours** |
+| **15** | **Security hardening (Helmet, XSS, MongoDB sanitize, compression, indexes)** | **30 min** |
+| **16** | **Missing production pages (404, Privacy, Terms, robots.txt, sitemap.xml)** | **45 min** |
+| **17** | **Email notification system (welcome, dispute updates, admin alerts)** | **30 min** |
+| **18** | **Final go-live checklist (security audit, performance, domain config)** | **30 min** |
+| **Total** | | **~11 hours** |
 
 ---
 
 > **Between-Phase Review Prompt:** After completing each phase, paste this into the Replit AI Agent before moving on:
 >
 > *"Review all files created or modified in the last phase. Check for: broken import paths, missing function definitions, CSS class name mismatches between HTML and CSS files, undefined variables, and any logic that references a route or function that doesn't exist yet. Fix everything you find before we continue."*
+
+---
+
+> **Production Definition:** This workflow produces a site that is production-ready when all 18 phases are complete. "Production-ready" means: secure against common web attacks, optimized for performance and SEO, fully functional auth and data flow, email notifications working, legal compliance pages in place, and verified with a Lighthouse score ≥ 90. It does NOT include payment processing (Stripe), advanced analytics, or A/B testing — those are separate feature additions.

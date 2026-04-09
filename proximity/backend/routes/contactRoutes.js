@@ -3,6 +3,7 @@ const { check, validationResult } = require('express-validator');
 const ContactMessage = require('../models/ContactMessage');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
+const { sendAdminContactAlert } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -18,6 +19,11 @@ router.post('/', [
     const { name, email, phone, message } = req.body;
     const msg = new ContactMessage({ name, email, phone, message });
     await msg.save();
+
+    sendAdminContactAlert({ name, email, phone, message }).catch(err =>
+      console.error('[Email] Admin contact alert failed:', err.message)
+    );
+
     res.status(201).json({ success: true, message: 'Message sent successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

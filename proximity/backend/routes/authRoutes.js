@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
+const { sendWelcomeEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const authLimiter = rateLimit({
 });
 
 function generateToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '30d' });
 }
 
 router.post('/register', authLimiter, [
@@ -32,6 +33,8 @@ router.post('/register', authLimiter, [
 
     const user = new User({ name, email, password });
     await user.save();
+
+    sendWelcomeEmail(user).catch(err => console.error('[Email] Welcome email failed:', err.message));
 
     res.status(201).json({
       success: true,

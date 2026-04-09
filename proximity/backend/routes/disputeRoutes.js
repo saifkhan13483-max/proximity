@@ -1,8 +1,10 @@
 const express = require('express');
 const { check, validationResult } = require('express-validator');
 const Dispute = require('../models/Dispute');
+const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
+const { sendDisputeStatusEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -51,6 +53,14 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
       { new: true }
     );
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
+
+    const disputeOwner = await User.findById(dispute.userId).select('name email');
+    if (disputeOwner) {
+      sendDisputeStatusEmail(disputeOwner, dispute).catch(err =>
+        console.error('[Email] Dispute status email failed:', err.message)
+      );
+    }
+
     res.json({ success: true, dispute });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
