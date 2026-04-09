@@ -41,11 +41,11 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
+app.use(express.json({ limit: '10kb' }));
+
 app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
-
-app.use(express.json({ limit: '10kb' }));
 
 const allowedOrigins = process.env.ALLOWED_ORIGIN
   ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
@@ -71,10 +71,20 @@ const globalLimiter = rateLimit({
 });
 app.use('/api/', globalLimiter);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/disputes', disputeRoutes);
-app.use('/api/contact', contactRoutes);
+const requireDb = (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database not connected. Please configure MONGO_URI to enable this feature.'
+    });
+  }
+  next();
+};
+
+app.use('/api/auth', requireDb, authRoutes);
+app.use('/api/users', requireDb, userRoutes);
+app.use('/api/disputes', requireDb, disputeRoutes);
+app.use('/api/contact', requireDb, contactRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

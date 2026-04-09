@@ -16,11 +16,11 @@ router.post('/', [
   if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
 
   try {
-    const { name, email, phone, message } = req.body;
-    const msg = new ContactMessage({ name, email, phone, message });
+    const { name, email, phone, subject, message } = req.body;
+    const msg = new ContactMessage({ name, email, phone, subject, message });
     await msg.save();
 
-    sendAdminContactAlert({ name, email, phone, message }).catch(err =>
+    sendAdminContactAlert({ name, email, phone, subject, message }).catch(err =>
       console.error('[Email] Admin contact alert failed:', err.message)
     );
 

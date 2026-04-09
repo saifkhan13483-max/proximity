@@ -71,5 +71,13 @@ Default credentials: `admin@proximity.com` / `Admin@12345` — **change this imm
 - Credit dispute management across Equifax, Experian, TransUnion
 - JWT auth with client/admin roles
 - Admin panel for user and dispute management
-- Contact form with email notifications (requires `EMAIL_*` env vars)
+- Contact form (with subject field) and email notifications (requires `EMAIL_*` env vars)
 - Security: helmet, cors, rate limiting, xss-clean, hpp, mongo-sanitize, compression
+- No-DB guard middleware: API returns a friendly 503 when MongoDB is not connected
+
+## Audit Fixes Applied
+
+- **Middleware ordering**: `express.json()` now runs before `mongoSanitize`, `xss-clean`, and `hpp` so those middlewares can actually inspect the request body (was a security bug)
+- **config.env created**: JWT_SECRET now has a default value so auth works out of the box
+- **Contact form `subject` field**: Added `subject` to `ContactMessage` model, contact API route, admin email alert, and the contact form's JS submission handler; admin panel now displays subject in message cards
+- **No-DB guard**: Added `requireDb` middleware so all API routes return a clear 503 JSON error instead of a cryptic Mongoose timeout when `MONGO_URI` is not set

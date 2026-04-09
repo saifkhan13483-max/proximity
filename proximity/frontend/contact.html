@@ -145,13 +145,14 @@
         const name = document.getElementById('contact-name').value.trim();
         const email = document.getElementById('contact-email').value.trim();
         const phone = document.getElementById('contact-phone').value.trim();
+        const subject = document.getElementById('contact-subject').value.trim();
         const message = document.getElementById('contact-message').value.trim();
         if (!name || !email || !message) { window.showToast('Please fill in all required fields', 'error'); return; }
         const btn = document.getElementById('contact-submit');
         btn.disabled = true; btn.textContent = 'Sending...';
         try {
           const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : '/api';
-          const res = await fetch(API_BASE + '/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, phone, message }) });
+          const res = await fetch(API_BASE + '/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, phone, subject, message }) });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || 'Failed to send message');
           window.showToast("Message sent! We'll respond within 24 hours.", 'success');

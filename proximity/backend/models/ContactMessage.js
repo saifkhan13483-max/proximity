@@ -4,6 +4,7 @@ const contactMessageSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, trim: true, lowercase: true },
   phone: { type: String, trim: true },
+  subject: { type: String, trim: true, maxlength: 200 },
   message: { type: String, required: true, minlength: 10, maxlength: 2000 },
   read: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }

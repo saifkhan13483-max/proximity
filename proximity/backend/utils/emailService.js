@@ -112,13 +112,13 @@ const sendDisputeStatusEmail = async (user, dispute) => {
   });
 };
 
-const sendAdminContactAlert = async ({ name, email, phone, message }) => {
+const sendAdminContactAlert = async ({ name, email, phone, subject, message }) => {
   const appUrl = process.env.APP_URL || 'http://localhost:5000';
   const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
   if (!adminEmail) return { skipped: true };
   return sendEmail({
     to: adminEmail,
-    subject: `New Contact Form Submission from ${name}`,
+    subject: `New Contact Form Submission from ${name}${subject ? ': ' + subject : ''}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A0A0A; color: #ffffff; padding: 40px; border-radius: 16px;">
         <h1 style="color: #B8924A; font-size: 2rem; margin-bottom: 4px;">PROXIMITY</h1>
@@ -128,6 +128,7 @@ const sendAdminContactAlert = async ({ name, email, phone, message }) => {
           <p style="margin: 6px 0;"><strong style="color: #B8924A;">Name:</strong> <span style="color:#ccc">${name}</span></p>
           <p style="margin: 6px 0;"><strong style="color: #B8924A;">Email:</strong> <span style="color:#ccc">${email}</span></p>
           ${phone ? `<p style="margin: 6px 0;"><strong style="color: #B8924A;">Phone:</strong> <span style="color:#ccc">${phone}</span></p>` : ''}
+          ${subject ? `<p style="margin: 6px 0;"><strong style="color: #B8924A;">Subject:</strong> <span style="color:#ccc">${subject}</span></p>` : ''}
           <p style="margin: 16px 0 0;"><strong style="color: #B8924A;">Message:</strong></p>
           <p style="color: #cccccc; line-height: 1.7; margin-top: 8px;">${message}</p>
         </div>

@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="message-card ${m.read ? '' : 'unread'}" id="msg-${m._id}">
         <div class="message-sender">${m.name}</div>
         <div class="message-email">${m.email}${m.phone ? ' · ' + m.phone : ''}</div>
+        ${m.subject ? `<div style="color:var(--color-gold);font-size:0.85rem;font-weight:600;margin:4px 0">Subject: ${m.subject}</div>` : ''}
         <div class="message-preview">${m.message.substring(0, 150)}${m.message.length > 150 ? '...' : ''}</div>
         <div class="message-footer">
           <span class="message-date">${formatDate(m.createdAt)}</span>
