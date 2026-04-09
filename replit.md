@@ -75,6 +75,27 @@ Default credentials: `admin@proximity.com` / `Admin@12345` — **change this imm
 - Security: helmet, cors, rate limiting, xss-clean, hpp, mongo-sanitize, compression
 - No-DB guard middleware: API returns a friendly 503 when MongoDB is not connected
 
+## Subscription & Plan Features
+
+- **Plan system**: `none`, `basic`, `standard`, `premium` stored on User model
+- **Dispute limits**: Basic plan enforces 5 disputes/month on the backend; Standard/Premium are unlimited; no-plan users are blocked from filing
+- **Credit score tracking**: Admins can add dated credit score entries per bureau; clients see a chart and history
+- **Legal letter templates**: 6 downloadable templates (dispute, debt validation, goodwill, pay-for-delete, identity theft, FCRA 609) — Premium only
+- **Dedicated advisor**: Admin assigns advisor name/email/phone; shown as a card in client overview
+- **Identity theft protection**: Admin can add/resolve alerts with severity levels — Premium only
+- **Financial coaching sessions**: Admin schedules and marks sessions complete; client sees upcoming/past sessions — Premium only
+- **Admin "Manage" modal**: Per-user panel to set plan, assign advisor, add credit scores, add identity alerts, schedule coaching sessions
+
+## API Routes
+
+- `POST /api/subscription/assign/:userId` — Admin: set plan, advisor info
+- `POST /api/subscription/scores/:userId` — Admin: add credit score entry
+- `POST /api/subscription/alerts/:userId` — Admin: add identity alert
+- `PUT /api/subscription/alerts/:userId/:alertId/resolve` — Admin: resolve alert
+- `POST /api/subscription/coaching/:userId` — Admin: schedule coaching session
+- `PUT /api/subscription/coaching/:userId/:sessionId/complete` — Admin: mark session complete
+- `GET /api/subscription/me` — Client: get own subscription data
+
 ## Audit Fixes Applied
 
 - **Middleware ordering**: `express.json()` now runs before `mongoSanitize`, `xss-clean`, and `hpp` so those middlewares can actually inspect the request body (was a security bug)

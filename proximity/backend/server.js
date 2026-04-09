@@ -16,6 +16,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const disputeRoutes = require('./routes/disputeRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const app = express();
 
@@ -85,6 +86,7 @@ app.use('/api/auth', requireDb, authRoutes);
 app.use('/api/users', requireDb, userRoutes);
 app.use('/api/disputes', requireDb, disputeRoutes);
 app.use('/api/contact', requireDb, contactRoutes);
+app.use('/api/subscription', requireDb, subscriptionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

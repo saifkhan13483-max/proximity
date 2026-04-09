@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   }
 
+  function planBadge(plan) {
+    const p = plan || 'none';
+    return `<span class="plan-badge ${p}">${p}</span>`;
+  }
+
   async function fetchAllUsers() {
     try {
       const res = await window.authUtils.authFetch('/users');
@@ -58,11 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { return []; }
   }
 
+  let allUsersCache = [];
+
   function renderUsers(users) {
+    allUsersCache = users;
     const tbody = document.getElementById('users-table-body');
     if (!tbody) return;
     if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);padding:32px">No users found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-text-muted);padding:32px">No users found</td></tr>';
       return;
     }
     tbody.innerHTML = users.map(u => `
@@ -70,7 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${u.name}</td>
         <td style="color:var(--color-text-muted)">${u.email}</td>
         <td><span class="badge ${u.role === 'admin' ? 'badge-resolved' : 'badge-pending'}">${u.role}</span></td>
+        <td>${planBadge(u.plan)}</td>
         <td style="color:var(--color-text-muted)">${formatDate(u.createdAt)}</td>
+        <td><button class="btn-primary" style="padding:6px 14px;font-size:0.8rem" onclick="openUserModal('${u._id}')">Manage</button></td>
         <td><button class="btn-delete" onclick="deleteUser('${u._id}')">Delete</button></td>
       </tr>
     `).join('');
@@ -86,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const [users, disputes] = await Promise.all([fetchAllUsers(), fetchAllDisputes()]);
         renderUsers(users);
         renderDisputes(disputes);
+        renderKPICards(users, disputes, null);
       }
     } catch (err) {
       window.showToast(err.message || 'Failed to delete user', 'error');
@@ -237,11 +248,268 @@ document.addEventListener('DOMContentLoaded', () => {
     const kpiTotal = document.getElementById('kpi-total-disputes');
     const kpiOpen = document.getElementById('kpi-open');
     const kpiUnread = document.getElementById('kpi-unread');
+    const kpiPremium = document.getElementById('kpi-premium');
     if (kpiUsers) kpiUsers.textContent = users.length;
     if (kpiTotal) kpiTotal.textContent = disputes.length;
     if (kpiOpen) kpiOpen.textContent = disputes.filter(d => d.status !== 'Resolved').length;
-    if (kpiUnread) kpiUnread.textContent = messages.filter(m => !m.read).length;
+    if (messages && kpiUnread) kpiUnread.textContent = messages.filter(m => !m.read).length;
+    if (kpiPremium) kpiPremium.textContent = users.filter(u => u.plan === 'premium').length;
   }
+
+  let currentModalUserId = null;
+
+  window.openUserModal = async function(userId) {
+    currentModalUserId = userId;
+    const user = allUsersCache.find(u => u._id === userId);
+    if (!user) return;
+
+    const modalName = document.getElementById('modal-user-name');
+    if (modalName) modalName.textContent = `Manage: ${user.name}`;
+
+    const planEl = document.getElementById('modal-plan');
+    if (planEl) planEl.value = user.plan || 'none';
+
+    const advName = document.getElementById('modal-advisor-name');
+    const advEmail = document.getElementById('modal-advisor-email');
+    const advPhone = document.getElementById('modal-advisor-phone');
+    if (advName) advName.value = user.advisorName || '';
+    if (advEmail) advEmail.value = user.advisorEmail || '';
+    if (advPhone) advPhone.value = user.advisorPhone || '';
+
+    renderModalScores(user.creditScores || []);
+    renderModalAlerts(user.identityAlerts || [], userId);
+    renderModalCoaching(user.coachingSessions || [], userId);
+
+    document.getElementById('user-modal').classList.add('open');
+  };
+
+  window.closeUserModal = function() {
+    document.getElementById('user-modal').classList.remove('open');
+    currentModalUserId = null;
+  };
+
+  document.getElementById('user-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeUserModal();
+  });
+
+  function renderModalScores(scores) {
+    const list = document.getElementById('modal-score-list');
+    if (!list) return;
+    if (!scores || scores.length === 0) {
+      list.innerHTML = '<div style="color:var(--color-text-muted);font-size:0.8rem;margin-top:8px">No scores yet.</div>';
+      return;
+    }
+    const sorted = [...scores].sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt));
+    list.innerHTML = sorted.map(s => `
+      <div class="score-mini-item">
+        <span class="sv">${s.score}</span>
+        <span>${s.bureau}</span>
+        <span>${formatDate(s.recordedAt)}</span>
+        ${s.note ? `<span style="color:var(--color-text-muted)">${s.note}</span>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function renderModalAlerts(alerts, userId) {
+    const list = document.getElementById('modal-alert-list');
+    if (!list) return;
+    if (!alerts || alerts.length === 0) {
+      list.innerHTML = '<div style="color:var(--color-text-muted);font-size:0.8rem">No alerts.</div>';
+      return;
+    }
+    list.innerHTML = alerts.map(a => `
+      <div class="alert-mini-item">
+        <div>
+          <strong style="color:#fff;font-size:0.8rem">${a.type}</strong>
+          <span style="color:var(--color-text-muted);font-size:0.75rem;margin-left:6px">(${a.severity})</span>
+          <div style="color:var(--color-text-muted);font-size:0.75rem">${a.description}</div>
+        </div>
+        ${!a.resolved ? `<button class="btn-mini btn-mini-outline" style="font-size:0.75rem;padding:4px 10px" onclick="resolveAlert('${userId}','${a._id}')">Resolve</button>` : '<span style="color:#4ade80;font-size:0.75rem">Resolved</span>'}
+      </div>
+    `).join('');
+  }
+
+  function renderModalCoaching(sessions, userId) {
+    const list = document.getElementById('modal-coaching-list');
+    if (!list) return;
+    if (!sessions || sessions.length === 0) {
+      list.innerHTML = '<div style="color:var(--color-text-muted);font-size:0.8rem">No sessions.</div>';
+      return;
+    }
+    const sorted = [...sessions].sort((a, b) => new Date(b.scheduledDate || b.createdAt) - new Date(a.scheduledDate || a.createdAt));
+    list.innerHTML = sorted.map(s => `
+      <div class="coaching-mini-item">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:#fff">${s.title}</strong>
+          ${!s.completed ? `<button class="btn-mini btn-mini-outline" style="font-size:0.75rem;padding:4px 10px" onclick="completeSession('${userId}','${s._id}')">Complete</button>` : '<span style="color:#4ade80;font-size:0.75rem">Done</span>'}
+        </div>
+        ${s.scheduledDate ? `<div style="color:var(--color-gold);font-size:0.75rem">${formatDate(s.scheduledDate)}</div>` : ''}
+        ${s.notes ? `<div>${s.notes}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  window.savePlan = async function() {
+    if (!currentModalUserId) return;
+    const plan = document.getElementById('modal-plan').value;
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/assign/${currentModalUserId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ plan })
+      });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Plan updated successfully', 'success');
+        const userIdx = allUsersCache.findIndex(u => u._id === currentModalUserId);
+        if (userIdx >= 0) {
+          allUsersCache[userIdx].plan = plan;
+          renderUsers(allUsersCache);
+        }
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to update plan', 'error');
+    }
+  };
+
+  window.saveAdvisor = async function() {
+    if (!currentModalUserId) return;
+    const advisorName = document.getElementById('modal-advisor-name').value.trim();
+    const advisorEmail = document.getElementById('modal-advisor-email').value.trim();
+    const advisorPhone = document.getElementById('modal-advisor-phone').value.trim();
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/assign/${currentModalUserId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ advisorName, advisorEmail, advisorPhone })
+      });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Advisor assigned successfully', 'success');
+        const userIdx = allUsersCache.findIndex(u => u._id === currentModalUserId);
+        if (userIdx >= 0) {
+          allUsersCache[userIdx].advisorName = advisorName;
+          allUsersCache[userIdx].advisorEmail = advisorEmail;
+          allUsersCache[userIdx].advisorPhone = advisorPhone;
+        }
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to assign advisor', 'error');
+    }
+  };
+
+  window.addScore = async function() {
+    if (!currentModalUserId) return;
+    const score = parseInt(document.getElementById('modal-score').value);
+    const bureau = document.getElementById('modal-score-bureau').value;
+    const note = document.getElementById('modal-score-note').value.trim();
+    if (!score || score < 300 || score > 850) {
+      window.showToast('Score must be between 300 and 850', 'error');
+      return;
+    }
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/scores/${currentModalUserId}`, {
+        method: 'POST',
+        body: JSON.stringify({ score, bureau, note })
+      });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Credit score added', 'success');
+        document.getElementById('modal-score').value = '';
+        document.getElementById('modal-score-note').value = '';
+        renderModalScores(data.creditScores);
+        const userIdx = allUsersCache.findIndex(u => u._id === currentModalUserId);
+        if (userIdx >= 0) allUsersCache[userIdx].creditScores = data.creditScores;
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to add score', 'error');
+    }
+  };
+
+  window.addAlert = async function() {
+    if (!currentModalUserId) return;
+    const type = document.getElementById('modal-alert-type').value.trim();
+    const description = document.getElementById('modal-alert-desc').value.trim();
+    const severity = document.getElementById('modal-alert-severity').value;
+    if (!type || !description) {
+      window.showToast('Type and description are required', 'error');
+      return;
+    }
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/alerts/${currentModalUserId}`, {
+        method: 'POST',
+        body: JSON.stringify({ type, description, severity })
+      });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Alert added', 'success');
+        document.getElementById('modal-alert-type').value = '';
+        document.getElementById('modal-alert-desc').value = '';
+        renderModalAlerts(data.identityAlerts, currentModalUserId);
+        const userIdx = allUsersCache.findIndex(u => u._id === currentModalUserId);
+        if (userIdx >= 0) allUsersCache[userIdx].identityAlerts = data.identityAlerts;
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to add alert', 'error');
+    }
+  };
+
+  window.resolveAlert = async function(userId, alertId) {
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/alerts/${userId}/${alertId}/resolve`, { method: 'PUT' });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Alert resolved', 'success');
+        renderModalAlerts(data.identityAlerts, userId);
+        const userIdx = allUsersCache.findIndex(u => u._id === userId);
+        if (userIdx >= 0) allUsersCache[userIdx].identityAlerts = data.identityAlerts;
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to resolve alert', 'error');
+    }
+  };
+
+  window.addCoaching = async function() {
+    if (!currentModalUserId) return;
+    const title = document.getElementById('modal-coaching-title').value.trim();
+    const scheduledDate = document.getElementById('modal-coaching-date').value;
+    const notes = document.getElementById('modal-coaching-notes').value.trim();
+    if (!title) {
+      window.showToast('Session title is required', 'error');
+      return;
+    }
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/coaching/${currentModalUserId}`, {
+        method: 'POST',
+        body: JSON.stringify({ title, scheduledDate: scheduledDate || undefined, notes })
+      });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Session scheduled', 'success');
+        document.getElementById('modal-coaching-title').value = '';
+        document.getElementById('modal-coaching-date').value = '';
+        document.getElementById('modal-coaching-notes').value = '';
+        renderModalCoaching(data.coachingSessions, currentModalUserId);
+        const userIdx = allUsersCache.findIndex(u => u._id === currentModalUserId);
+        if (userIdx >= 0) allUsersCache[userIdx].coachingSessions = data.coachingSessions;
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to schedule session', 'error');
+    }
+  };
+
+  window.completeSession = async function(userId, sessionId) {
+    try {
+      const res = await window.authUtils.authFetch(`/subscription/coaching/${userId}/${sessionId}/complete`, { method: 'PUT' });
+      const data = await window.authUtils.handleResponse(res);
+      if (data) {
+        window.showToast('Session marked complete', 'success');
+        renderModalCoaching(data.coachingSessions, userId);
+        const userIdx = allUsersCache.findIndex(u => u._id === userId);
+        if (userIdx >= 0) allUsersCache[userIdx].coachingSessions = data.coachingSessions;
+      }
+    } catch (err) {
+      window.showToast(err.message || 'Failed to complete session', 'error');
+    }
+  };
 
   Promise.all([fetchAllUsers(), fetchAllDisputes(), fetchAllMessages()]).then(([users, disputes, messages]) => {
     renderKPICards(users, disputes, messages);

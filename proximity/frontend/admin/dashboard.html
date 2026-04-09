@@ -14,6 +14,35 @@
   <link rel="stylesheet" href="../css/responsive.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <style>
+    .plan-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+    .plan-badge.none { background:rgba(154,154,154,0.15); color:#9A9A9A; }
+    .plan-badge.basic { background:rgba(184,146,74,0.15); color:#B8924A; }
+    .plan-badge.standard { background:rgba(96,165,250,0.15); color:#60a5fa; }
+    .plan-badge.premium { background:rgba(167,139,250,0.15); color:#a78bfa; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:32px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; position:relative; }
+    .modal h3 { margin:0 0 20px; color:#fff; font-size:1.1rem; }
+    .modal-close { position:absolute; top:16px; right:16px; background:none; border:none; color:#9A9A9A; cursor:pointer; font-size:1.2rem; }
+    .modal-section { margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .modal-section:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+    .modal-section h4 { color:var(--color-gold); font-size:0.85rem; letter-spacing:0.08em; text-transform:uppercase; margin:0 0 12px; }
+    .mini-input { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:8px 12px; width:100%; font-size:0.875rem; box-sizing:border-box; margin-bottom:8px; }
+    .mini-input:focus { outline:none; border-color:var(--color-gold); }
+    .mini-select { background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:8px 12px; width:100%; font-size:0.875rem; box-sizing:border-box; margin-bottom:8px; }
+    .btn-mini { padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .btn-mini-primary { background:var(--color-gold); color:#0A0A0A; border:none; }
+    .btn-mini-primary:hover { opacity:0.85; }
+    .btn-mini-outline { background:transparent; border:1px solid var(--color-gold); color:var(--color-gold); }
+    .btn-mini-outline:hover { background:var(--color-gold); color:#0A0A0A; }
+    .score-mini-list { margin-top:10px; }
+    .score-mini-item { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:6px; font-size:0.8rem; color:var(--color-text-muted); }
+    .score-mini-item .sv { font-size:1rem; font-weight:700; color:var(--color-gold); }
+    .alert-mini-item { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:6px; font-size:0.8rem; }
+    .coaching-mini-item { padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:6px; font-size:0.8rem; color:var(--color-text-muted); }
+    .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:24px; }
+  </style>
 </head>
 <body>
   <div class="dashboard-layout">
@@ -72,6 +101,13 @@
             </div>
           </div>
           <div class="kpi-card">
+            <div class="kpi-card-icon"><i data-lucide="star" class="icon-gold"></i></div>
+            <div>
+              <div class="kpi-number" id="kpi-premium">--</div>
+              <div class="kpi-label">Premium Clients</div>
+            </div>
+          </div>
+          <div class="kpi-card">
             <div class="kpi-card-icon"><i data-lucide="mail" class="icon-gold"></i></div>
             <div>
               <div class="kpi-number" id="kpi-unread">--</div>
@@ -98,12 +134,14 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Plan</th>
                 <th>Joined</th>
-                <th>Action</th>
+                <th>Manage</th>
+                <th>Delete</th>
               </tr>
             </thead>
             <tbody id="users-table-body">
-              <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</td></tr>
             </tbody>
           </table>
         </div>
@@ -137,6 +175,68 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeUserModal()">&times;</button>
+      <h3 id="modal-user-name">Manage Client</h3>
+
+      <div class="modal-section">
+        <h4>Subscription Plan</h4>
+        <select class="mini-select" id="modal-plan">
+          <option value="none">No Plan</option>
+          <option value="basic">Basic — $79/mo</option>
+          <option value="standard">Standard — $149/mo</option>
+          <option value="premium">Premium — $299/mo</option>
+        </select>
+        <button class="btn-mini btn-mini-primary" onclick="savePlan()">Save Plan</button>
+      </div>
+
+      <div class="modal-section">
+        <h4>Dedicated Advisor</h4>
+        <input class="mini-input" type="text" id="modal-advisor-name" placeholder="Advisor full name">
+        <input class="mini-input" type="email" id="modal-advisor-email" placeholder="Advisor email">
+        <input class="mini-input" type="tel" id="modal-advisor-phone" placeholder="Advisor phone (optional)">
+        <button class="btn-mini btn-mini-primary" onclick="saveAdvisor()">Assign Advisor</button>
+      </div>
+
+      <div class="modal-section">
+        <h4>Add Credit Score Entry</h4>
+        <input class="mini-input" type="number" id="modal-score" placeholder="Credit score (300–850)" min="300" max="850">
+        <select class="mini-select" id="modal-score-bureau">
+          <option value="Overall">Overall</option>
+          <option value="Equifax">Equifax</option>
+          <option value="Experian">Experian</option>
+          <option value="TransUnion">TransUnion</option>
+        </select>
+        <input class="mini-input" type="text" id="modal-score-note" placeholder="Note (optional)">
+        <button class="btn-mini btn-mini-primary" onclick="addScore()">Add Score</button>
+        <div class="score-mini-list" id="modal-score-list"></div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Identity Theft Alert</h4>
+        <input class="mini-input" type="text" id="modal-alert-type" placeholder="Alert type (e.g. New Account Inquiry)">
+        <input class="mini-input" type="text" id="modal-alert-desc" placeholder="Description">
+        <select class="mini-select" id="modal-alert-severity">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <button class="btn-mini btn-mini-primary" onclick="addAlert()">Add Alert</button>
+        <div id="modal-alert-list" style="margin-top:10px"></div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Financial Coaching Session</h4>
+        <input class="mini-input" type="text" id="modal-coaching-title" placeholder="Session title (e.g. Budget Planning)">
+        <input class="mini-input" type="date" id="modal-coaching-date">
+        <input class="mini-input" type="text" id="modal-coaching-notes" placeholder="Notes (optional)">
+        <button class="btn-mini btn-mini-primary" onclick="addCoaching()">Schedule Session</button>
+        <div id="modal-coaching-list" style="margin-top:10px"></div>
+      </div>
+    </div>
   </div>
 
   <script src="../js/main.js" defer></script>

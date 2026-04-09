@@ -36,6 +36,24 @@ router.post('/', protect, [
 
   try {
     const { bureau, accountName, accountNumber, reason } = req.body;
+
+    const userPlan = req.user.plan || 'none';
+    if (userPlan === 'none') {
+      return res.status(403).json({ success: false, message: 'You need an active plan to submit disputes. Please contact us to get started.' });
+    }
+
+    if (userPlan === 'basic') {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyCount = await Dispute.countDocuments({
+        userId: req.user._id,
+        createdAt: { $gte: startOfMonth }
+      });
+      if (monthlyCount >= 5) {
+        return res.status(403).json({ success: false, message: 'You have reached the 5 dispute limit for the Basic plan this month. Upgrade to Standard or Premium for unlimited disputes.' });
+      }
+    }
+
     const dispute = new Dispute({ userId: req.user._id, bureau, accountName, accountNumber, reason });
     await dispute.save();
     res.status(201).json({ success: true, dispute });

@@ -14,6 +14,56 @@
   <link rel="stylesheet" href="../css/responsive.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <style>
+    .plan-badge { display:inline-block; padding:4px 14px; border-radius:20px; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; }
+    .plan-badge.none { background:rgba(154,154,154,0.15); color:#9A9A9A; }
+    .plan-badge.basic { background:rgba(184,146,74,0.15); color:#B8924A; }
+    .plan-badge.standard { background:rgba(96,165,250,0.15); color:#60a5fa; }
+    .plan-badge.premium { background:rgba(167,139,250,0.15); color:#a78bfa; }
+    .feature-list { list-style:none; padding:0; margin:16px 0 0; }
+    .feature-list li { display:flex; align-items:center; gap:10px; color:var(--color-text-muted); font-size:0.9rem; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .feature-list li:last-child { border-bottom:none; }
+    .feature-list li .feat-icon { color:#4ade80; flex-shrink:0; }
+    .feature-list li .feat-icon.locked { color:#9A9A9A; }
+    .plan-card { background:var(--color-card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin-bottom:24px; }
+    .plan-card h3 { font-size:1rem; color:var(--color-gold); margin:0 0 4px; letter-spacing:0.05em; text-transform:uppercase; }
+    .advisor-card { background:var(--color-card); border:1px solid rgba(184,146,74,0.2); border-radius:16px; padding:24px; margin-bottom:24px; display:flex; gap:20px; align-items:flex-start; }
+    .advisor-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#B8924A,#8a6a30); display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:700; color:#0A0A0A; flex-shrink:0; }
+    .advisor-info h4 { margin:0 0 4px; color:#fff; font-size:1rem; }
+    .advisor-info p { margin:2px 0; color:var(--color-text-muted); font-size:0.875rem; }
+    .score-entry { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:8px; }
+    .score-entry .score-val { font-size:1.5rem; font-weight:700; color:var(--color-gold); }
+    .score-entry .score-meta { color:var(--color-text-muted); font-size:0.8rem; }
+    .score-entry .score-bureau { font-size:0.75rem; padding:2px 10px; border-radius:12px; background:rgba(184,146,74,0.1); color:#B8924A; }
+    .doc-card { background:var(--color-card); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .doc-card-info { display:flex; align-items:center; gap:14px; }
+    .doc-icon { color:var(--color-gold); }
+    .doc-card h4 { margin:0 0 2px; font-size:0.95rem; color:#fff; }
+    .doc-card p { margin:0; font-size:0.8rem; color:var(--color-text-muted); }
+    .btn-download { padding:8px 18px; border-radius:8px; border:1px solid var(--color-gold); background:transparent; color:var(--color-gold); font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .btn-download:hover { background:var(--color-gold); color:#0A0A0A; }
+    .premium-lock { text-align:center; padding:40px 20px; }
+    .premium-lock .lock-icon { color:#9A9A9A; margin-bottom:16px; }
+    .premium-lock h3 { color:#fff; margin-bottom:8px; }
+    .premium-lock p { color:var(--color-text-muted); font-size:0.9rem; max-width:380px; margin:0 auto; }
+    .alert-item { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:10px; margin-bottom:10px; }
+    .alert-item.high { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2); }
+    .alert-item.medium { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); }
+    .alert-item.low { background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.15); }
+    .alert-item.resolved { opacity:0.5; }
+    .alert-sev { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:2px 8px; border-radius:10px; }
+    .alert-sev.high { background:rgba(248,113,113,0.2); color:#f87171; }
+    .alert-sev.medium { background:rgba(251,191,36,0.2); color:#fbbf24; }
+    .alert-sev.low { background:rgba(74,222,128,0.2); color:#4ade80; }
+    .coaching-item { display:flex; align-items:flex-start; gap:14px; padding:16px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:10px; }
+    .coaching-date { font-size:0.75rem; color:var(--color-gold); margin-top:4px; }
+    .coaching-item h4 { margin:0 0 2px; font-size:0.95rem; color:#fff; }
+    .coaching-item p { margin:0; font-size:0.85rem; color:var(--color-text-muted); }
+    .completed-badge { padding:2px 10px; border-radius:10px; font-size:0.7rem; font-weight:700; background:rgba(74,222,128,0.15); color:#4ade80; }
+    .dispute-limit-bar { background:rgba(255,255,255,0.06); border-radius:8px; height:8px; margin-top:8px; overflow:hidden; }
+    .dispute-limit-fill { height:100%; background:var(--color-gold); border-radius:8px; transition:width 0.5s; }
+    .dispute-limit-fill.danger { background:#f87171; }
+  </style>
 </head>
 <body>
   <div class="dashboard-layout">
@@ -30,6 +80,21 @@
         </button>
         <button class="sidebar-nav-item" data-tab="submit">
           <i data-lucide="plus-circle"></i> Submit Dispute
+        </button>
+        <button class="sidebar-nav-item" data-tab="scores">
+          <i data-lucide="trending-up"></i> Credit Score
+        </button>
+        <button class="sidebar-nav-item" data-tab="plan">
+          <i data-lucide="star"></i> My Plan
+        </button>
+        <button class="sidebar-nav-item" data-tab="documents">
+          <i data-lucide="file"></i> Documents
+        </button>
+        <button class="sidebar-nav-item" data-tab="protection">
+          <i data-lucide="shield"></i> Protection
+        </button>
+        <button class="sidebar-nav-item" data-tab="coaching">
+          <i data-lucide="book-open"></i> Coaching
         </button>
         <button class="sidebar-nav-item" data-tab="profile">
           <i data-lucide="user"></i> Profile
@@ -71,7 +136,16 @@
               <div class="stat-card-label">Days Active</div>
             </div>
           </div>
+          <div class="stat-card">
+            <div class="stat-card-icon"><i data-lucide="trending-up" class="icon-gold"></i></div>
+            <div>
+              <div class="stat-card-number" id="stat-latest-score">--</div>
+              <div class="stat-card-label">Credit Score</div>
+            </div>
+          </div>
         </div>
+
+        <div id="advisor-overview-card" style="display:none"></div>
 
         <div class="chart-card">
           <h3>Dispute Activity</h3>
@@ -79,17 +153,28 @@
         </div>
 
         <div class="progress-card">
-          <h3>Estimated Credit Improvement</h3>
-          <p>Track your progress as disputes resolve and your credit profile strengthens.</p>
+          <h3>Credit Score Progress</h3>
+          <p id="score-progress-label">Track your progress as disputes resolve and your credit profile strengthens.</p>
           <div class="progress-bar-bg">
-            <div class="progress-bar-fill"></div>
+            <div class="progress-bar-fill" id="score-progress-fill"></div>
           </div>
-          <p style="margin-top:8px;font-size:0.85rem;color:var(--color-gold)">35% improvement tracked</p>
+          <p id="score-progress-pct" style="margin-top:8px;font-size:0.85rem;color:var(--color-gold)"></p>
         </div>
       </div>
 
       <div id="tab-disputes" class="tab-panel">
         <h2 class="tab-heading">My Disputes</h2>
+        <div id="dispute-limit-info" style="margin-bottom:20px;display:none">
+          <div class="plan-card" style="padding:16px 20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="color:var(--color-text-muted);font-size:0.875rem">Monthly Disputes Used</span>
+              <span id="dispute-limit-text" style="color:var(--color-gold);font-size:0.875rem;font-weight:600"></span>
+            </div>
+            <div class="dispute-limit-bar">
+              <div class="dispute-limit-fill" id="dispute-limit-fill"></div>
+            </div>
+          </div>
+        </div>
         <div style="overflow-x:auto">
           <table class="disputes-table">
             <thead>
@@ -109,6 +194,12 @@
 
       <div id="tab-submit" class="tab-panel">
         <h2 class="tab-heading">Submit a Dispute</h2>
+        <div id="submit-plan-warning" style="display:none;margin-bottom:20px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:12px;padding:16px 20px">
+          <p style="color:#f87171;margin:0;font-size:0.9rem"><strong>Plan Required:</strong> You need an active subscription to submit disputes. <a href="pricing.html" style="color:var(--color-gold)">View Plans &rarr;</a></p>
+        </div>
+        <div id="submit-limit-warning" style="display:none;margin-bottom:20px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:16px 20px">
+          <p style="color:#fbbf24;margin:0;font-size:0.9rem"><strong>Limit Reached:</strong> You've used all 5 disputes for this month on the Basic plan. <a href="#" onclick="document.querySelector('[data-tab=plan]').click();return false;" style="color:var(--color-gold)">Upgrade your plan &rarr;</a></p>
+        </div>
         <form class="dispute-form" id="dispute-form">
           <div class="form-group">
             <label class="form-label" for="bureau">Credit Bureau *</label>
@@ -136,6 +227,40 @@
           </div>
           <button type="submit" class="btn-primary" style="width:100%">Submit Dispute</button>
         </form>
+      </div>
+
+      <div id="tab-scores" class="tab-panel">
+        <h2 class="tab-heading">Credit Score History</h2>
+        <div class="chart-card" style="margin-bottom:24px">
+          <h3>Score Over Time</h3>
+          <canvas id="score-chart" height="220"></canvas>
+        </div>
+        <div id="score-entries-list">
+          <div style="text-align:center;padding:40px;color:var(--color-text-muted)">No credit score entries yet. Your advisor will add scores as your credit improves.</div>
+        </div>
+      </div>
+
+      <div id="tab-plan" class="tab-panel">
+        <h2 class="tab-heading">My Plan</h2>
+        <div id="plan-details-container">
+          <div style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</div>
+        </div>
+      </div>
+
+      <div id="tab-documents" class="tab-panel">
+        <h2 class="tab-heading">Legal Letter Templates</h2>
+        <p style="color:var(--color-text-muted);margin-bottom:24px">Download professionally crafted dispute letter templates to send directly to credit bureaus and creditors.</p>
+        <div id="documents-container"></div>
+      </div>
+
+      <div id="tab-protection" class="tab-panel">
+        <h2 class="tab-heading">Identity Theft Protection</h2>
+        <div id="protection-container"></div>
+      </div>
+
+      <div id="tab-coaching" class="tab-panel">
+        <h2 class="tab-heading">Financial Coaching</h2>
+        <div id="coaching-container"></div>
       </div>
 
       <div id="tab-profile" class="tab-panel">
