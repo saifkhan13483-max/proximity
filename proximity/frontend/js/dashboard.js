@@ -98,7 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (statResolved) statResolved.textContent = resolved;
     if (statDays) statDays.textContent = daysActive;
 
-    if (subscription && subscription.creditScores && subscription.creditScores.length > 0) {
+    const plan = subscription ? subscription.plan || 'none' : 'none';
+    const canViewScores = plan === 'standard' || plan === 'premium';
+
+    if (canViewScores && subscription && subscription.creditScores && subscription.creditScores.length > 0) {
       const sorted = [...subscription.creditScores].sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt));
       if (statScore) statScore.textContent = sorted[0].score;
 
@@ -119,11 +122,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (progressPct) progressPct.textContent = `Current Score: ${sorted[0].score} / 850`;
       }
     } else {
-      if (statScore) statScore.textContent = 'N/A';
+      if (statScore) statScore.textContent = canViewScores ? 'N/A' : '—';
       const progressFill = document.getElementById('score-progress-fill');
       const progressPct = document.getElementById('score-progress-pct');
+      const progressLabel = document.getElementById('score-progress-label');
       if (progressFill) progressFill.style.width = '0%';
-      if (progressPct) progressPct.textContent = 'No score entries yet.';
+      if (!canViewScores) {
+        if (progressLabel) progressLabel.textContent = 'Credit score tracking is available on Standard and Premium plans.';
+        if (progressPct) progressPct.innerHTML = '<a href="../pricing.html" style="color:var(--color-gold)">Upgrade to track your score &rarr;</a>';
+      } else {
+        if (progressPct) progressPct.textContent = 'No score entries yet. Your advisor will add scores as your credit improves.';
+      }
     }
   }
 
@@ -228,6 +237,22 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderScoreTab(subscription) {
     const listEl = document.getElementById('score-entries-list');
     const ctx = document.getElementById('score-chart');
+
+    const plan = subscription ? subscription.plan || 'none' : 'none';
+    if (plan === 'none' || plan === 'basic') {
+      const chartCard = ctx ? ctx.closest('.chart-card') : null;
+      if (chartCard) chartCard.style.display = 'none';
+      if (listEl) listEl.innerHTML = `
+        <div class="premium-lock">
+          <div class="lock-icon"><i data-lucide="lock" style="width:48px;height:48px"></i></div>
+          <h3>Standard Plan Feature</h3>
+          <p>Credit score tracking is available on the <strong style="color:#60a5fa">Standard</strong> and <strong style="color:#a78bfa">Premium</strong> plans. Upgrade to start tracking your score progress over time.</p>
+          <a href="../pricing.html" class="btn-primary" style="display:inline-block;text-decoration:none;margin-top:20px">View Plans</a>
+        </div>
+      `;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      return;
+    }
 
     if (!subscription || !subscription.creditScores || subscription.creditScores.length === 0) {
       if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--color-text-muted)">No credit score entries yet. Your advisor will add scores as your credit improves.</div>';
@@ -371,12 +396,26 @@ document.addEventListener('DOMContentLoaded', () => {
             </li>
           `).join('')}
         </ul>
-        ${plan !== 'premium' ? `
+        ${plan === 'premium' ? `
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06)">
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:16px 20px">
+              <i data-lucide="award" style="width:28px;height:28px;color:#a78bfa;flex-shrink:0"></i>
+              <div>
+                <div style="color:#a78bfa;font-weight:700;font-size:0.95rem;margin-bottom:4px">Credit Score Guarantee</div>
+                <div style="color:var(--color-text-muted);font-size:0.85rem">Your Premium plan includes our credit score guarantee. If we don't improve your score within 90 days of active disputing, we'll work for free until we do.</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(167,139,250,0.05);border:1px solid rgba(167,139,250,0.1);border-radius:12px;padding:14px 18px;margin-top:10px">
+              <i data-lucide="sparkles" style="width:22px;height:22px;color:#a78bfa;flex-shrink:0"></i>
+              <div style="color:var(--color-text-muted);font-size:0.85rem"><strong style="color:#a78bfa">White-Glove Concierge Service:</strong> Our team handles everything for you — from pulling reports to filing disputes to negotiating with creditors.</div>
+            </div>
+          </div>
+        ` : `
           <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06)">
             <p style="color:var(--color-text-muted);font-size:0.85rem;margin:0 0 12px">Unlock more features by upgrading your plan.</p>
             <a href="../pricing.html" class="btn-primary" style="display:inline-block;text-decoration:none;padding:10px 24px;font-size:0.9rem">Upgrade Plan</a>
           </div>
-        ` : ''}
+        `}
       </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -528,6 +567,150 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('')}
       `;
     }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function renderMonitoringTab(disputes, subscription) {
+    const container = document.getElementById('monitoring-container');
+    if (!container) return;
+
+    const plan = subscription ? subscription.plan || 'none' : 'none';
+    if (plan === 'none' || plan === 'basic') {
+      container.innerHTML = `
+        <div class="premium-lock">
+          <div class="lock-icon"><i data-lucide="activity" style="width:48px;height:48px"></i></div>
+          <h3>Standard Plan Feature</h3>
+          <p>Credit monitoring is available on the <strong style="color:#60a5fa">Standard</strong> and <strong style="color:#a78bfa">Premium</strong> plans. Upgrade to get real-time monitoring of your credit file activity.</p>
+          <a href="../pricing.html" class="btn-primary" style="display:inline-block;text-decoration:none;margin-top:20px">Upgrade Plan</a>
+        </div>
+      `;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      return;
+    }
+
+    const bureaus = ['Equifax', 'Experian', 'TransUnion'];
+    const bureauColors = { Equifax: '#f87171', Experian: '#60a5fa', TransUnion: '#4ade80' };
+    const statusCounts = { Pending: 0, 'In Progress': 0, Resolved: 0 };
+    disputes.forEach(d => { if (statusCounts[d.status] !== undefined) statusCounts[d.status]++; });
+
+    const latestByBureau = {};
+    bureaus.forEach(b => {
+      const byBureau = disputes.filter(d => d.bureau === b);
+      latestByBureau[b] = byBureau.length;
+    });
+
+    const recent = [...disputes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px">
+        ${bureaus.map(b => `
+          <div class="plan-card" style="padding:18px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:700;color:${bureauColors[b]}">${latestByBureau[b]}</div>
+            <div style="color:var(--color-text-muted);font-size:0.85rem;margin-top:4px">${b} Disputes</div>
+          </div>
+        `).join('')}
+        <div class="plan-card" style="padding:18px;text-align:center">
+          <div style="font-size:1.6rem;font-weight:700;color:#4ade80">${statusCounts.Resolved}</div>
+          <div style="color:var(--color-text-muted);font-size:0.85rem;margin-top:4px">Resolved</div>
+        </div>
+        <div class="plan-card" style="padding:18px;text-align:center">
+          <div style="font-size:1.6rem;font-weight:700;color:#fbbf24">${statusCounts['In Progress']}</div>
+          <div style="color:var(--color-text-muted);font-size:0.85rem;margin-top:4px">In Progress</div>
+        </div>
+      </div>
+
+      <div class="plan-card">
+        <h3 style="color:var(--color-gold);font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 16px">Recent Activity</h3>
+        ${recent.length === 0 ? '<p style="color:var(--color-text-muted);text-align:center;padding:20px 0">No activity yet. Submit your first dispute to get started.</p>' :
+          recent.map(d => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:8px;height:8px;border-radius:50%;background:${d.status === 'Resolved' ? '#4ade80' : d.status === 'In Progress' ? '#60a5fa' : '#B8924A'};flex-shrink:0"></div>
+                <div>
+                  <div style="color:#fff;font-size:0.875rem;font-weight:500">${d.accountName}</div>
+                  <div style="color:var(--color-text-muted);font-size:0.75rem">${d.bureau}</div>
+                </div>
+              </div>
+              <div style="text-align:right">
+                <span class="badge ${getBadgeClass(d.status)}">${d.status}</span>
+                <div style="color:var(--color-text-muted);font-size:0.75rem;margin-top:4px">${formatDate(d.createdAt)}</div>
+              </div>
+            </div>
+          `).join('')
+        }
+      </div>
+
+      <div class="plan-card" style="margin-top:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="color:#4ade80"><i data-lucide="shield-check" style="width:28px;height:28px"></i></div>
+          <div>
+            <div style="color:#fff;font-weight:600;margin-bottom:4px">Active Monitoring</div>
+            <div style="color:var(--color-text-muted);font-size:0.875rem">Your credit file is actively monitored. You'll receive email notifications whenever a dispute status changes.</div>
+          </div>
+        </div>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function renderCallsTab(subscription) {
+    const container = document.getElementById('calls-container');
+    if (!container) return;
+
+    const plan = subscription ? subscription.plan || 'none' : 'none';
+    if (plan !== 'premium') {
+      container.innerHTML = `
+        <div class="premium-lock">
+          <div class="lock-icon"><i data-lucide="phone-call" style="width:48px;height:48px"></i></div>
+          <h3>Premium Feature</h3>
+          <p>Monthly advisor calls are available exclusively on the <strong style="color:#a78bfa">Premium Plan</strong>. Get a dedicated one-on-one call with your personal advisor every month to review progress and strategy.</p>
+          <a href="../pricing.html" class="btn-primary" style="display:inline-block;text-decoration:none;margin-top:20px">Upgrade to Premium</a>
+        </div>
+      `;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      return;
+    }
+
+    const hasAdvisor = subscription && subscription.advisorName;
+
+    container.innerHTML = `
+      <p style="color:var(--color-text-muted);margin-bottom:20px">Your Premium plan includes a monthly one-on-one call with your dedicated advisor to review your credit progress, discuss strategy, and answer any questions.</p>
+
+      ${hasAdvisor ? `
+        <div class="advisor-card" style="margin-bottom:24px">
+          <div class="advisor-avatar">${subscription.advisorName.split(' ').map(p => p[0]).join('').toUpperCase().slice(0,2)}</div>
+          <div class="advisor-info">
+            <h4>Your Advisor</h4>
+            <p style="color:#fff;font-weight:600;font-size:1rem">${subscription.advisorName}</p>
+            ${subscription.advisorEmail ? `<p><i data-lucide="mail" style="width:13px;height:13px;display:inline;vertical-align:middle;margin-right:4px"></i>${subscription.advisorEmail}</p>` : ''}
+            ${subscription.advisorPhone ? `<p><i data-lucide="phone" style="width:13px;height:13px;display:inline;vertical-align:middle;margin-right:4px"></i>${subscription.advisorPhone}</p>` : ''}
+          </div>
+        </div>
+      ` : `
+        <div class="plan-card" style="margin-bottom:24px;text-align:center;padding:28px">
+          <p style="color:var(--color-text-muted)">Your advisor is being assigned. You'll see their contact details here once assigned. In the meantime, reach us through the contact form.</p>
+          <a href="../contact.html" class="btn-primary" style="display:inline-block;text-decoration:none;margin-top:12px">Contact Us</a>
+        </div>
+      `}
+
+      <div class="plan-card">
+        <h3 style="color:var(--color-gold);font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 16px">What to Expect Each Month</h3>
+        <ul class="feature-list">
+          <li><i data-lucide="check-circle" class="feat-icon" style="width:16px;height:16px"></i> 45-minute strategy call via phone or video</li>
+          <li><i data-lucide="check-circle" class="feat-icon" style="width:16px;height:16px"></i> Review of all active and resolved disputes</li>
+          <li><i data-lucide="check-circle" class="feat-icon" style="width:16px;height:16px"></i> Credit score progress review and next steps</li>
+          <li><i data-lucide="check-circle" class="feat-icon" style="width:16px;height:16px"></i> Personalized credit-building recommendations</li>
+          <li><i data-lucide="check-circle" class="feat-icon" style="width:16px;height:16px"></i> Q&amp;A with your dedicated credit specialist</li>
+        </ul>
+      </div>
+
+      ${hasAdvisor ? `
+        <div style="margin-top:16px;text-align:center">
+          <p style="color:var(--color-text-muted);margin-bottom:12px;font-size:0.9rem">Ready to schedule your next monthly call?</p>
+          <a href="mailto:${subscription.advisorEmail || ''}" class="btn-primary" style="display:inline-block;text-decoration:none">Email Your Advisor</a>
+        </div>
+      ` : ''}
+    `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
@@ -797,7 +980,9 @@ Sincerely,
     renderScoreTab(subscription);
     renderPlanTab(subscription);
     renderDocumentsTab(subscription);
+    renderMonitoringTab(disputes, subscription);
     renderProtectionTab(subscription);
     renderCoachingTab(subscription);
+    renderCallsTab(subscription);
   });
 });
