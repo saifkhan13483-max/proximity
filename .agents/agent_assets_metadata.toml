@@ -1,0 +1,97 @@
+uploads = []
+
+[[generated]]
+id = "N31WloqDPO--74FeefHMF"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-horizontal.png"
+type = "image"
+title = "proximity horizontal lockup"
+
+[[generated]]
+id = "ah-C_MsT8xTosjJ7g1Lq5"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-stacked.png"
+type = "image"
+title = "proximity stacked lockup"
+
+[[generated]]
+id = "SnNUUwPydwWMDXcvwSBNX"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-icon.png"
+type = "image"
+title = "proximity app icon"
+
+[[generated]]
+id = "RX48c3ey2TL8Y5NLf6_Vb"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-light.png"
+type = "image"
+title = "proximity light reversed version"
+
+[[generated]]
+id = "v13cCTRVcqyVBw3GrjBYC"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-monochrome.png"
+type = "image"
+title = "proximity monochrome version"
+
+[[generated]]
+id = "fizqPR1KoUEbc2P82ShLN"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-avatar.png"
+type = "image"
+title = "proximity social media avatar"
+
+[[generated]]
+id = "XB8HM3L9_STTlMmHKGmlE"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-wordmark.png"
+type = "image"
+title = "proximity wordmark only"
+
+[[generated]]
+id = "MN6pB6mI7d8n6915GLBZq"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-cinematic-hero.png"
+type = "image"
+title = "proximity cinematic hero"
+
+[[outputs]]
+id = "TlLegdYr4jI6oiJVhtR-o"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-horizontal.png"
+type = "image"
+title = "Variant 1 — Primary Lockup (Horizontal)"
+
+[[outputs]]
+id = "a5pwfWAOpMbpe5ym-XnEv"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-stacked.png"
+type = "image"
+title = "Variant 2 — Stacked Lockup (Vertical)"
+
+[[outputs]]
+id = "-xlrGKrx2W3tgf-sMYRpN"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-icon.png"
+type = "image"
+title = "Variant 3 — App Icon / Favicon"
+
+[[outputs]]
+id = "TASarTeVPzMCh6FAtFUOq"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-light.png"
+type = "image"
+title = "Variant 4 — Light / Reversed Version"
+
+[[outputs]]
+id = "MTZhQluiBaEdcCVcJj9E0"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-monochrome.png"
+type = "image"
+title = "Variant 5 — Monochrome / Single Color"
+
+[[outputs]]
+id = "TBapa4D27Ax0o5rT35QoK"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-avatar.png"
+type = "image"
+title = "Variant 6 — Social Media Avatar"
+
+[[outputs]]
+id = "r2hVlnGAGVZD9sjcwyFvY"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-wordmark.png"
+type = "image"
+title = "Variant 7 — Wordmark Only"
+
+[[outputs]]
+id = "89TQ3imQa0wGAWLT850p0"
+uri = "file://proximity/frontend/assets/logo/proximity-logo-cinematic-hero.png"
+type = "image"
+title = "Variant 8 — Cinematic Hero Presentation"
