@@ -1,0 +1,52 @@
+Design a luxury, cinematic fintech logo identity system for a brand named "PROXIMITY".
+
+Core Design Direction:
+Create a sleek, modern monogram based on the letter "P" — geometric, precise, and subtly unique. The mark should feel like it belongs to an elite wealth management firm or premium financial institution. No mascots, no clutter, no complexity. Minimal, timeless, powerful.
+
+Color System:
+
+Background: Deep black #0A0A0A
+Primary accent: Brushed gold #B8924A with soft metallic luminosity — slightly glowing, never flat
+Optional: Warm off-white #F5F0E8 for typographic contrast
+Typography:
+
+Wordmark: "PROXIMITY" in wide letter-spacing (tracking: luxury level)
+Font style: Modern high-contrast serif OR clean geometric sans-serif
+Feel: Refined, premium, European luxury brand energy
+Lighting & Mood:
+
+Cinematic — as if the logo is emerging from darkness
+Soft inner glow on gold elements, subtle shadow depth
+High contrast, no noise, no texture overload
+Mood: Trustworthy, powerful, elegant, modern
+VARIANT LIST TO GENERATE:
+
+Variant 1 — Primary Lockup (Horizontal)
+Monogram "P" symbol on the left + "PROXIMITY" wordmark to the right. Dark background. Full gold treatment. Used for website header and desktop banners.
+
+Variant 2 — Stacked Lockup (Vertical)
+Monogram "P" centered above the wordmark "PROXIMITY". Centered composition. Used for splash screens, loading screens, and presentations.
+
+Variant 3 — App Icon / Favicon
+The "P" monogram only, centered inside a deep black square with rounded corners. Gold glow effect. No wordmark. Optimized for small sizes — bold, recognizable, iconic.
+
+Variant 4 — Light/Reversed Version
+Same as Variant 1 or 2, but on a white or off-white #F5F0E8 background. Gold becomes slightly darker and more muted. Used for printed materials, email headers, and light-mode UI.
+
+Variant 5 — Monochrome / Single Color
+All-white or all-black version of the full lockup. No gold. Clean, flat. Used for embossing, watermarks, legal docs, or situations requiring one-color printing.
+
+Variant 6 — Social Media Avatar
+Circular crop version of the "P" monogram. Deep black circle, centered gold "P" with glow. Clean border or subtle ring in gold. Used for profile pictures across all platforms.
+
+Variant 7 — Wordmark Only
+"PROXIMITY" in the refined typeface, wide-spaced, gold on black — no symbol. Used for certain UI contexts, document headers, or brand moments where type alone leads.
+
+Variant 8 — Cinematic Hero Presentation
+Full brand presentation mockup — logo centered on a cinematic black canvas, soft volumetric light emanating behind the mark, slight lens flare or atmospheric haze. Used for website hero sections, investor decks, and brand reveals.
+
+Output Specs for all variants:
+
+Style: Ultra-clean, professional brand presentation
+Format feel: As if designed by a top-tier brand agency
+No watermarks, no mockup frames unless specified
